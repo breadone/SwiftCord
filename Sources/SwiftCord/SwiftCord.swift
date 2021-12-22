@@ -1,6 +1,15 @@
-public struct SwiftCord {
-    public private(set) var text = "Hello, World!"
+//
+//  SwiftCord.swift
+//  
+//
+//  Created by Pradyun Setti on 22/12/21.
+//
 
+import Foundation
+
+public struct SwiftCord {
+    
     public init() {
     }
+    
 }
