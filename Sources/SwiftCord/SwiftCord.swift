@@ -8,8 +8,11 @@
 import Foundation
 
 public struct SwiftCord {
+    let botToken: String
+    let socket = Websocket(url: Endpoint.botGateway)
     
-    public init() {
+    public init(token: String) {
+        self.botToken = token
     }
     
 }
