@@ -7,12 +7,13 @@
 
 import Foundation
 
-public struct SwiftCord {
+public struct SwiftCordBot {
     let botToken: String
-    let socket = Websocket(url: Endpoint.botGateway)
+    let socket = Websocket(url: URL(string: Endpoint.botGateway)!)
     
     public init(token: String) {
         self.botToken = token
     }
+    
     
 }
