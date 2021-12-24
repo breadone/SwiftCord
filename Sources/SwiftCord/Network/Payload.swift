@@ -7,39 +7,43 @@
 
 import Foundation
 
-internal struct Payload: Codable {
+internal struct Payload {
     let op: Int // Opcode
-    let d: [String: PacketData]? // Event data
+    let d: Any // Event data
     let s: Int? // Sequence number, used for resuming sessions and heartbeats
     let t: String? // Event name
     
-    init(op: Int, d: [String: PacketData]? = nil, s: Int? = nil, t: String? = nil) {
-        self.op = op
+    /// Creates a payload with a JSON String
+    init(json: String) {
+        let data = json.decode() as! [String: Any]
+        self.op = data["op"] as! Int
+        self.d = data["d"]!
+        self.s = data["s"] as? Int
+        self.t = data["t"] as? String
+    }
+    
+    
+    /// Creates a Payload object with a dictionary or array
+    /// - Parameters:
+    ///   - op: opcode to dispatch
+    ///   - d: data to dispatch, either a dictionary or array
+    init(opcode op: Opcode, data d: Any) {
+        self.op = op.rawValue
         self.d = d
-        self.s = s
-        self.t = t
+        self.s = nil
+        self.t = nil
     }
 }
 
-// https://stackoverflow.com/questions/48297263/how-to-use-any-in-codable-type
-internal enum PacketData: Codable {
-    case int(Int), string(String)
-    
-    init(from decoder: Decoder) throws {
-        if let int = try? decoder.singleValueContainer().decode(Int.self) {
-            self = .int(int)
-            return
+extension Payload: JSONEncodable {
+    func encode() -> String {
+        var p = ["op": self.op, "d": self.d]
+        
+        if self.op == 0 {
+            p["t"] = self.t
+            p["s"] = self.s
         }
         
-        if let string = try? decoder.singleValueContainer().decode(String.self) {
-            self = .string(string)
-            return
-        }
-        
-        throw PacketDataError.missingValue
-    }
-    
-    enum PacketDataError: Error {
-        case missingValue
+        return p.encode()
     }
 }

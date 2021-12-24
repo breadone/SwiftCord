@@ -11,8 +11,9 @@ final class SwiftCordTests: XCTestCase {
     }
     
     func testEncoding() {
-        let packet = Payload(op: Opcode.dispatch.rawValue, d: ["test": .int(3)])
-        let c = JSONEncoder()
-        print(String(data: try! c.encode(packet), encoding: .utf8)!)
+        let packet = Payload(opcode: .dispatch, data: ["Hello": 4])
+        let data = packet.encode()
+        print(data)
+//        print(String(data: try! JSONSerialization.data(withJSONObject: packet, options: []), encoding: .utf8)!)
     }
 }
