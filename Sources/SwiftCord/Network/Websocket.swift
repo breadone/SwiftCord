@@ -21,8 +21,9 @@ class Websocket: NSObject {
     
     private func setup() {
         self.session = URLSession(configuration: .default, delegate: self, delegateQueue: OperationQueue())
-        self.webSocket = session.webSocketTask(with: url)
+        self.webSocket = session.webSocketTask(with: self.url)
         self.webSocket.resume()
+        print("resumed")
     }
     
     internal func ping() {
@@ -30,10 +31,10 @@ class Websocket: NSObject {
             if let error = error {
                 print("[WEBSOCKET ERROR]: Ping Error: \(error.localizedDescription)")
             } else {
-                print("socket is alive ig")
+                print("socket is alive")
                 
-                DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
-                    self.ping()
+                DispatchQueue.global().asyncAfter(deadline: .now() + 5) { [weak self] in
+                    self?.ping()
                 }
             }
         }
@@ -50,5 +51,9 @@ extension Websocket: URLSessionWebSocketDelegate {
     
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         print("\n\nsession closed\n\n")
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        print("\(error!)")
     }
 }
