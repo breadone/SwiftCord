@@ -7,16 +7,17 @@
 
 import Foundation
 
-internal struct Endpoint {
-    private init() {}
+internal enum Endpoint {
+    case gateway
     
-    static let base = "https://discord.com/api"
+}
+
+extension Endpoint {
     
-    static var gateway: String {
-        "\(base)/gateway"
+    var url: String {
+        switch self {
+        case .gateway:
+            return ""
+        }
     }
-    static var botGateway: String {
-        "\(base)/gateway/bot"
-    }
-    
 }
