@@ -36,6 +36,7 @@ internal struct Payload {
 }
 
 extension Payload: JSONEncodable {
+    /// Encodes the Payload object to a JSON String
     func encode() -> String {
         var p = ["op": self.op, "d": self.d]
         

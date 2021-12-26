@@ -13,11 +13,10 @@ internal enum Endpoint {
 }
 
 extension Endpoint {
-    
-    var url: String {
+    var info: (method: HTTPMethod, url: String) {
         switch self {
         case .gateway:
-            return ""
+            return (.get, "/gateway/bot")
         }
     }
 }

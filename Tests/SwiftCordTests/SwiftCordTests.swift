@@ -2,18 +2,15 @@ import XCTest
 @testable import SwiftCord
 
 final class SwiftCordTests: XCTestCase {
-
-    func testWebsocketConnection() {
-        let url = URL(string: "wss://echo.websocket.org")!
-        
-        let _ = Websocket(url: url)
-        
-    }
-    
-    func testEncoding() {
+    func testPayloadEncoding() {
         let packet = Payload(opcode: .dispatch, data: ["Hello": 4])
         let data = packet.encode()
-        print(data)
-//        print(String(data: try! JSONSerialization.data(withJSONObject: packet, options: []), encoding: .utf8)!)
+        XCTAssertEqual(data, "{\"d\":{\"Hello\":4},\"op\":0}")
+    }
+    
+    func testPayloadDecoding() {
+        let json = "{\"t\":null,\"s\":null,\"op\":10,\"d\":{\"heartbeat_interval\":41250}}"
+        let packet = Payload(json: json)
+        XCTAssertEqual(packet.op, 10)
     }
 }
