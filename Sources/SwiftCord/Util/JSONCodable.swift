@@ -7,6 +7,8 @@
 
 import Foundation
 
+typealias JSONObject = [String: Any]
+
 extension String {
     
     /// Decodes a JSON String to an dictionary or array
