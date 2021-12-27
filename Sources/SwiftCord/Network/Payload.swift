@@ -8,10 +8,17 @@
 import Foundation
 
 internal struct Payload {
-    let op: Int // Opcode
-    let d: Any // Event data
-    let s: Int? // Sequence number, used for resuming sessions and heartbeats
-    let t: String? // Event name
+    /// Payload's Opcode
+    let op: Int
+    
+    /// Any event data
+    let d: Any?
+    
+    /// Sequence number, used for resuming sessions and heartbeats
+    let s: Int?
+    
+    /// Event name
+    let t: String?
     
     /// Creates a payload with a JSON String
     init(json: String) {
@@ -27,7 +34,7 @@ internal struct Payload {
     /// - Parameters:
     ///   - op: opcode to dispatch
     ///   - d: data to dispatch, either a dictionary or array
-    init(opcode op: Opcode, data d: Any) {
+    init(opcode op: Opcode, data d: Any = []) {
         self.op = op.rawValue
         self.d = d
         self.s = nil

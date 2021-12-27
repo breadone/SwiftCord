@@ -13,6 +13,7 @@ public class SCBot {
     let botToken: String
     var options: SCOptions
     private var socket: WebSocket! = nil
+    var hbi: Double?
     
     public init(token: String, options: SCOptions = .default) {
         self.botToken = token
@@ -20,13 +21,16 @@ public class SCBot {
     }
     
     public func connect() async {
-        var data: JSONObject?
         do {
-            data = try await self.request(.gateway)
-            let url = URL(string: data!["url"] as! String)!
-            self.socket = WebSocket(request: URLRequest(url: url))
+            let data = try await self.request(.gateway)
+            var urlString = data["url"] as! String
+            urlString += "/?v=\(options.discordApiVersion)&encoding=json"
+            self.socket = WebSocket(request: URLRequest(url: URL(string: urlString)!))
             self.socket.delegate = self
             socket.connect()
+            try await Task.sleep(nanoseconds: 5 * 1_000_000_000)
+            try await Task.sleep(nanoseconds: UInt64(hbi! * Double.random(in: 0...1)) * 1000)
+            socket.write(string: Payload(opcode: .heartbeat, data: []).encode())
         } catch {
             print("[SCERROR]: \(error.localizedDescription)")
         }
@@ -64,7 +68,16 @@ extension SCBot {
         }
         
         do {
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, urlresponse) = try await URLSession.shared.data(for: request)
+            let response = urlresponse as? HTTPURLResponse
+            
+            switch response?.statusCode { // probably more to come idk
+            case 401: // unauthorised
+                throw SCError.badToken
+            default:
+                break
+            }
+            
             return try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as! JSONObject
         } catch {
             throw error
@@ -73,15 +86,34 @@ extension SCBot {
     }
 }
 
+// MARK: WebSocket shenans
 extension SCBot: WebSocketDelegate {
     public func didReceive(event: WebSocketEvent, client: WebSocket) {
         switch event {
         case .connected:
-            print("CONNECTED")
+            print("[SCBot] Connected!")
+        case .text(let string):
+            let payload = Payload(json: string)
+            gatewayResponse(of: payload)
         default:
-            print("rip")
+            break
         }
     }
     
-    
+    func gatewayResponse(of payload: Payload) {
+        var data: JSONObject = [:]
+        
+        if payload.d as? NSNull == nil {
+            data = payload.d as! JSONObject
+        }
+        
+        switch payload.op {
+        case 10: // Hello
+            self.hbi = data["heartbeat_interval"] as? Double
+        case 11: // HB Ack
+            print("Heartbeat acknowleged")
+        default:
+            print(payload.op)
+        }
+    }
 }
