@@ -13,4 +13,9 @@ final class SwiftCordTests: XCTestCase {
         let packet = Payload(json: json)
         XCTAssertEqual(packet.op, 10)
     }
+    
+    func testBotConnection() async {
+        let bot = SCBot(token: "no token for u")
+        await bot.connect()
+    }
 }

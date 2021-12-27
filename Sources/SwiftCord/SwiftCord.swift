@@ -6,30 +6,30 @@
 //
 
 import Foundation
+import Starscream
 
 /// The main SwiftCord Bot class
 public class SCBot {
     let botToken: String
     var options: SCOptions
-    private var socket: Websocket! = nil
+    private var socket: WebSocket! = nil
     
     public init(token: String, options: SCOptions = .default) {
         self.botToken = token
         self.options = options
     }
     
-    public func connect() {
-        Task {
-            var data: JSONObject?
-            do {
-                data = try await self.request(.gateway)
-                self.socket = Websocket(url: URL(string: data!["url"] as! String)!)
-                self.socket.ping()
-            } catch {
-                print("[SCERROR]: \(error.localizedDescription)")
-            }
+    public func connect() async {
+        var data: JSONObject?
+        do {
+            data = try await self.request(.gateway)
+            let url = URL(string: data!["url"] as! String)!
+            self.socket = WebSocket(request: URLRequest(url: url))
+            self.socket.delegate = self
+            socket.connect()
+        } catch {
+            print("[SCERROR]: \(error.localizedDescription)")
         }
-        
     }
 }
 
@@ -57,6 +57,7 @@ extension SCBot {
         // Step two: make url
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
         var request = URLRequest(url: url)
+        request.httpMethod = endpoint.info.method.rawValue
         
         if auth {
             request.addValue("Bot \(self.botToken)", forHTTPHeaderField: "Authorization")
@@ -70,4 +71,17 @@ extension SCBot {
         }
         
     }
+}
+
+extension SCBot: WebSocketDelegate {
+    public func didReceive(event: WebSocketEvent, client: WebSocket) {
+        switch event {
+        case .connected:
+            print("CONNECTED")
+        default:
+            print("rip")
+        }
+    }
+    
+    
 }
