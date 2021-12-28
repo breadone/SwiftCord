@@ -10,13 +10,15 @@ import Starscream
 
 /// The main SwiftCord Bot class
 public class SCBot {
-    let botToken: String
-    var options: SCOptions
+    public let botToken: String
+    public var options: SCOptions
+    public var presence: SCPresence
     private var socket: WebSocket! = nil
     
     public init(token: String, options: SCOptions = .default) {
         self.botToken = token
         self.options = options
+        self.presence = SCPresence(status: .online)
     }
     
     public func connect() async {
@@ -27,10 +29,25 @@ public class SCBot {
             self.socket = WebSocket(request: URLRequest(url: URL(string: urlString)!))
             self.socket.delegate = self
             socket.connect()
-            try await Task.sleep(nanoseconds: 5 * 1_000_000_000)
         } catch {
             print("[SCERROR]: \(error.localizedDescription)")
         }
+        
+        // send Identify Payload
+        try! await Task.sleep(nanoseconds: 5 * 1_000_000_000) // delay to account for connection time THIS WILL CHANGE DW
+        let data: JSONObject = [
+            "token": botToken,
+            "properties": [
+                "$os": "linux",
+                "$browser": "SwiftCord",
+                "$device": "SwiftCord"
+            ],
+            "presence": presence.encode(),
+            "compress": false,
+            "intents": 7
+        ]
+        
+        socket.write(string: Payload(opcode: .identify, data: data).encode())
     }
 }
 
@@ -113,13 +130,12 @@ extension SCBot: WebSocketDelegate {
     func gatewayResponse(of payload: Payload) {
         var data: JSONObject = [:]
         
-        if payload.d as? NSNull == nil {
+        if payload.d as? NSNull == nil { // checks Payload.d is not null
             data = payload.d as! JSONObject
         }
         
         switch payload.op {
         case 10: // Hello
-            print("hb: \(data["heartbeat_interval"]!)")
             self.heartbeat(at: data["heartbeat_interval"] as! Double)
         case 11: // HB Ack
             print("Heartbeat acknowleged")
