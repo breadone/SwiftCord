@@ -13,7 +13,6 @@ public class SCBot {
     let botToken: String
     var options: SCOptions
     private var socket: WebSocket! = nil
-    var hbi: Double?
     
     public init(token: String, options: SCOptions = .default) {
         self.botToken = token
@@ -29,8 +28,6 @@ public class SCBot {
             self.socket.delegate = self
             socket.connect()
             try await Task.sleep(nanoseconds: 5 * 1_000_000_000)
-            try await Task.sleep(nanoseconds: UInt64(hbi! * Double.random(in: 0...1)) * 1000)
-            socket.write(string: Payload(opcode: .heartbeat, data: []).encode())
         } catch {
             print("[SCERROR]: \(error.localizedDescription)")
         }
@@ -74,6 +71,8 @@ extension SCBot {
             switch response?.statusCode { // probably more to come idk
             case 401: // unauthorised
                 throw SCError.badToken
+            case 404:
+                throw URLError(.badURL)
             default:
                 break
             }
@@ -84,6 +83,17 @@ extension SCBot {
         }
         
     }
+    
+    func heartbeat(at interval: Double) {
+        let intervalWithJitter = (interval * Double.random(in: 0...1)) / 1000
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + intervalWithJitter) {
+            self.socket.write(string: Payload(opcode: .heartbeat).encode())
+            print("heartbeat sent")
+            self.heartbeat(at: interval)
+        }
+    }
+    
 }
 
 // MARK: WebSocket shenans
@@ -109,7 +119,8 @@ extension SCBot: WebSocketDelegate {
         
         switch payload.op {
         case 10: // Hello
-            self.hbi = data["heartbeat_interval"] as? Double
+            print("hb: \(data["heartbeat_interval"]!)")
+            self.heartbeat(at: data["heartbeat_interval"] as! Double)
         case 11: // HB Ack
             print("Heartbeat acknowleged")
         default:
