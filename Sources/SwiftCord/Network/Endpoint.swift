@@ -30,7 +30,10 @@ extension Endpoint {
             return (.patch, "/channels/\(id.idString)")
             
         case let .deleteChannel(id):
-            return (.delete, "/channels/\(id.idString)"
+            return (.delete, "/channels/\(id.idString)")
+            
+        case let .getChannelMessages(id):
+            return (.get, "/channels/\(id.idString)/messages")
         }
-    }
+        }
 }

@@ -9,7 +9,7 @@ import Foundation
 fileprivate let DISCORD_EPOCH = Date(timeIntervalSince1970: 1420070400000) // defined as the first second of 2015
 
 /// Discord's UUID System
-struct Snowflake: Codable {
+public struct Snowflake: Codable {
     /// The ID of the snowflake
     let id: UInt64
     

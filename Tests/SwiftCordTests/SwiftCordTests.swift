@@ -16,7 +16,7 @@ final class SwiftCordTests: XCTestCase {
     
     func testBotConnection() async {
         let bot = SCBot(token: "no token for u")
-        await bot.connect()
-//        try? await Task.sleep(nanoseconds: 60 * 1_000_000_000)
+        bot.connect()
+        try? await Task.sleep(nanoseconds: 30 * 1_000_000_000)
     }
 }

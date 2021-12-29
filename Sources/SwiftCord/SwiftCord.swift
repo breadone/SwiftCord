@@ -14,6 +14,7 @@ public class SCBot {
     public var options: SCOptions
     public var presence: SCPresence
     private var socket: WebSocket! = nil
+    private let sema = DispatchSemaphore(value: 0)
     
     public init(token: String, options: SCOptions = .default) {
         self.botToken = token
@@ -21,20 +22,22 @@ public class SCBot {
         self.presence = SCPresence(status: .online)
     }
     
-    public func connect() async {
-        do {
-            let data = try await self.request(.gateway)
-            var urlString = data["url"] as! String
-            urlString += "/?v=\(options.discordApiVersion)&encoding=json"
-            self.socket = WebSocket(request: URLRequest(url: URL(string: urlString)!))
-            self.socket.delegate = self
-            socket.connect()
-        } catch {
-            print("[SCERROR]: \(error.localizedDescription)")
+    public func connect() {
+        Task(priority: .high) {
+            do {
+                let data = try await self.request(.gateway)
+                var urlString = data["url"] as! String
+                urlString += "/?v=\(options.discordApiVersion)&encoding=json"
+                self.socket = WebSocket(request: URLRequest(url: URL(string: urlString)!))
+                self.socket.delegate = self
+                socket.connect()
+            } catch {
+                print("[SCERROR]: \(error.localizedDescription)")
+            }
         }
+        sema.wait()
         
         // send Identify Payload
-        try! await Task.sleep(nanoseconds: 5 * 1_000_000_000) // delay to account for connection time THIS WILL CHANGE DW
         let data: JSONObject = [
             "token": botToken,
             "properties": [
@@ -48,6 +51,7 @@ public class SCBot {
         ]
         
         socket.write(string: Payload(opcode: .identify, data: data).encode())
+        print("identified")
     }
 }
 
@@ -102,13 +106,18 @@ extension SCBot {
     }
     
     func heartbeat(at interval: Double) {
-        let intervalWithJitter = (interval * Double.random(in: 0...1)) / 1000
+        let sema = DispatchSemaphore(value: 0)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + intervalWithJitter) {
+        let intervalWithJitter = (interval * Double.random(in: 0...1)) * 1_000_000 // adds jitter, then converts to nanoseconds for
+        
+        Task(priority: .utility) {
+            try? await Task.sleep(nanoseconds: UInt64(intervalWithJitter))
             self.socket.write(string: Payload(opcode: .heartbeat).encode())
             print("heartbeat sent")
-            self.heartbeat(at: interval)
+            sema.signal()
         }
+        sema.wait()
+//        self.heartbeat(at: interval)
     }
     
 }
@@ -119,9 +128,13 @@ extension SCBot: WebSocketDelegate {
         switch event {
         case .connected:
             print("[SCBot] Connected!")
+            sema.signal()
         case .text(let string):
+//            print(string)
             let payload = Payload(json: string)
             gatewayResponse(of: payload)
+        case .disconnected(let reason, let code):
+            print("[SCBot] Disconnected \(reason), \(code)")
         default:
             break
         }
@@ -135,9 +148,12 @@ extension SCBot: WebSocketDelegate {
         }
         
         switch payload.op {
+        case 1: // Request Heartbeat
+            socket.write(string: Payload(opcode: .heartbeat).encode())
         case 10: // Hello
             self.heartbeat(at: data["heartbeat_interval"] as! Double)
-        case 11: // HB Ack
+            
+        case 11: // Heartbeat Ack
             print("Heartbeat acknowleged")
         default:
             print(payload.op)
