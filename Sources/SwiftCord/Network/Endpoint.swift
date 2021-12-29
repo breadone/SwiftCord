@@ -7,7 +7,7 @@
 
 import Foundation
 
-internal enum Endpoint {
+public enum Endpoint {
     case gateway
     
     // Channel

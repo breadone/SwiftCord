@@ -7,7 +7,7 @@
 
 import Foundation
 
-typealias JSONObject = [String: Any]
+public typealias JSONObject = [String: Any]
 
 extension String {
     
