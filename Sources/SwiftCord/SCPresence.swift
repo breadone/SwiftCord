@@ -8,17 +8,20 @@
 import Foundation
 
 /// Presence object for Discord Bot
-public struct SCPresence: JSONEncodable {
+public struct SCPresence {
     var activities: [String: Any] = [:]
     var status: String
     var afk: Bool
     var since: Int
     
+    public var arrayRepresentation: JSONObject {
+        return ["status": status, "afk": afk, "since": since, "activities": activities]
+    }
     
     /// Creates a new Presense object
     /// - Parameters:
     ///   - status: What the bot's online/offline etc status is
-    ///   - activity: What the bot is "playing"
+    ///   - activity: What the bot is doing
     ///   - activityType: The type of activity the bot is doing: 0 = Playing, 1 = Streaming, 2 = Listening, 3 = Watching
     init(status: DiscordStatus, activity: String? = nil, activityType: Int = 0) {
         self.status = status.rawValue
@@ -31,11 +34,6 @@ public struct SCPresence: JSONEncodable {
                 "type": activityType
             ]
         }
-    }
-    
-    public func encode() -> String {
-        let a: JSONObject = ["status": status, "afk": afk, "since": since, "activities": activities]
-        return a.encode()
     }
 }
 

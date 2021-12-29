@@ -3,9 +3,10 @@ import XCTest
 
 final class SwiftCordTests: XCTestCase {
     func testPayloadEncoding() {
-        let packet = Payload(opcode: .dispatch, data: ["Hello": 4])
+        let packet = Payload(opcode: .dispatch, data: ["Hello": 4, "hmm": ["test": 5]])
         let data = packet.encode()
-        XCTAssertEqual(data, "{\"op\":0,\"d\":{\"Hello\":4}}")
+        print(data)
+//        XCTAssertEqual(data, "{\"op\":0,\"d\":{\"Hello\":4}}")
     }
     
     func testPayloadDecoding() {
@@ -15,8 +16,26 @@ final class SwiftCordTests: XCTestCase {
     }
     
     func testBotConnection() async {
-        let bot = SCBot(token: "NzE1MDk2NTA4ODAxODc1OTkw.Xs4PhQ.LkkU8ocfzzIWOLv9DaCCZDwkdxA", intents: 8)
+        let bot = SCBot(token: "lol oops", intents: 1 << 16)
         bot.connect()
-        try? await Task.sleep(nanoseconds: 30 * 1_000_000_000)
+        try? await Task.sleep(nanoseconds: 120 * 1_000_000_000)
+    }
+    
+    func testPresenceCoding() {
+        let data: JSONObject = [
+            "token": "aaaaaa",
+            "properties": [
+                "$os": "macOS",
+                "$browser": "SwiftCord",
+                "$device": "SwiftCord"
+            ],
+            "presence": SCPresence(status: .online, activity: "Star Citizen").arrayRepresentation,
+            "compress": false,
+            "intents": 8
+        ]
+        
+        let p = Payload(opcode: .identify, data: data).encode()
+        let x = Payload(json: p)
+        print(p)
     }
 }

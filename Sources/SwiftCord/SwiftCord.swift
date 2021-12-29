@@ -12,6 +12,7 @@ import Starscream
 public class SCBot {
     public let botToken: String
     public var botIntents: Int
+    public var user: User?
     
     public var options: SCOptions
     public var presence: SCPresence
@@ -32,6 +33,10 @@ public class SCBot {
         self.presence = SCPresence(status: .online)
     }
     
+}
+
+// MARK: - Discord Functions
+extension SCBot {
     public func connect() {
         Task(priority: .high) {
             do {
@@ -51,21 +56,21 @@ public class SCBot {
         let data: JSONObject = [
             "token": botToken,
             "properties": [
-                "$os": "linux",
+                "$os": "macOS",
                 "$browser": "SwiftCord",
                 "$device": "SwiftCord"
             ],
-            "presence": presence.encode(),
+            "presence": presence.arrayRepresentation,
             "compress": false,
             "intents": botIntents
         ]
-        
-        socket.write(string: Payload(opcode: .identify, data: data).encode())
-        print("identified")
+        let identify = Payload(opcode: .identify, data: data).encode()
+        print(identify)
+        socket.write(string: identify)
     }
 }
 
-// MARK: Network Functions
+// MARK: - Network Functions
 extension SCBot {
     /// Makes the network requests to Discord's API
     /// - Parameters:
@@ -115,20 +120,16 @@ extension SCBot {
         
     }
     
-    private func heartbeat() {
-        Task(priority: .utility) {
-            try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000))
-            
-            self.socket.write(string: Payload(opcode: .heartbeat).encode())
-            print("heartbeat sent")
-            sema.signal()
-        }
-        sema.wait()
+    private func heartbeat() async {
+        try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000))
+        
+        self.socket.write(string: Payload(opcode: .heartbeat).encode())
+        print("heartbeat sent")
     }
     
 }
 
-// MARK: WebSocket shenans
+// MARK: - WebSocket shenans
 extension SCBot: WebSocketDelegate {
     public func didReceive(event: WebSocketEvent, client: WebSocket) {
         switch event {
@@ -159,28 +160,34 @@ extension SCBot: WebSocketDelegate {
         }
         
         switch payload.op {
-        case 1: // Request Heartbeat
+        case 1: // Request heartbeat
             socket.write(string: Payload(opcode: .heartbeat).encode())
             
-        case 9:
-            print("[SCBot] Session invalidated, trying to reconnect...")
-            self.socket = nil
-            self.connect()
+        case 9: // Invalid session
+            if (data["d"] as! Bool) {
+                print("[SCBot] Session invalidated, trying to reconnect...")
+                self.socket = nil
+                self.connect()
+            } else {
+                print("[SCBot] Session invalidated, Socket indicated that reconnection is not possible")
+            }
             
         case 10: // Hello
             interval = data["heartbeat_interval"] as! Double
             let intervalWithJitter = (interval * Double.random(in: 0...1)) * 1_000_000
+            
             Task {
                 try? await Task.sleep(nanoseconds: UInt64(intervalWithJitter))
                 socket.write(string: Payload(opcode: .heartbeat).encode()) // writes inital heartbeat with jitter
-                sema.signal()
+//                sema.signal()
             }
-            sema.wait()
-            self.heartbeat() // send heatbeats with regular interval after
+//            sema.wait()
             
-        case 11: // Heartbeat Ack
+        case 11: // Heartbeat ack
             print("Heartbeat acknowleged")
-            self.heartbeat()
+            Task(priority: .utility) {
+                await self.heartbeat()
+            }
             
         default:
             break
