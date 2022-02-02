@@ -18,12 +18,27 @@ public struct SCPresence {
         return ["status": status, "afk": afk, "since": since, "activities": activities]
     }
     
+    public enum DiscordStatus: String {
+        case online = "online"
+        case dnd = "dnd"
+        case idle = "idle"
+        case invisible = "invisible"
+        case offline = "offline"
+    }
+    
+    public enum DiscordActivityType: Int {
+        case playing = 0
+        case streaming = 1
+        case listening = 2
+        case watching = 3
+    }
+    
     /// Creates a new Presense object
     /// - Parameters:
     ///   - status: What the bot's online/offline etc status is
     ///   - activity: What the bot is doing
-    ///   - activityType: The type of activity the bot is doing: 0 = Playing, 1 = Streaming, 2 = Listening, 3 = Watching
-    init(status: DiscordStatus, activity: String? = nil, activityType: Int = 0) {
+    ///   - activityType: The type of activity the bot is doing
+    init(status: DiscordStatus, activity: String? = nil, activityType: DiscordActivityType = .playing) {
         self.status = status.rawValue
         self.afk = false
         self.since = Int(Date().timeIntervalSince1970)
@@ -31,16 +46,10 @@ public struct SCPresence {
         if activity != nil {
             self.activities = [
                 "name": activity!,
-                "type": activityType
+                "type": activityType.rawValue
             ]
         }
     }
 }
 
-public enum DiscordStatus: String {
-    case online = "online"
-    case dnd = "dnd"
-    case idle = "idle"
-    case invisible = "invisible"
-    case offline = "offline"
-}
+

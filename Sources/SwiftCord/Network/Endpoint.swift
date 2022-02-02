@@ -10,11 +10,15 @@ import Foundation
 public enum Endpoint {
     case gateway
     
-    // Channel
+    // MARK: Channel
     case getChannel(Snowflake)
     case modifyChannel(Snowflake)
     case deleteChannel(Snowflake)
     case getChannelMessages(Snowflake)
+    
+    // MARK: User
+    case getCurrentUser
+    case getUser(Snowflake)
 }
 
 extension Endpoint {
@@ -34,6 +38,13 @@ extension Endpoint {
             
         case let .getChannelMessages(id):
             return (.get, "/channels/\(id.idString)/messages")
+            
+        case .getCurrentUser:
+            return (.get, "/users/@me")
+            
+        case let .getUser(id):
+            return (.get, "/users/\(id.idString)")
+            
         }
-        }
+    }
 }

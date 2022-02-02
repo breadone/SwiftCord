@@ -12,13 +12,13 @@ import Starscream
 public class SCBot {
     public let botToken: String
     public var botIntents: Int
-    public var user: User?
+    public internal(set) var user: User?
     
     public var options: SCOptions
     public var presence: SCPresence
     
-    private var socket: WebSocket! = nil
-    private var interval: Double = 0 // heartbeat interval
+    public internal(set) var socket: WebSocket! = nil
+    public internal(set) var heartbeatInterval: Double = 0
     private let sema = DispatchSemaphore(value: 0)
     
     /// Creates a new Discord Bot using SwiftCord
@@ -65,7 +65,6 @@ extension SCBot {
             "intents": botIntents
         ]
         let identify = Payload(opcode: .identify, data: data).encode()
-        print(identify)
         socket.write(string: identify)
     }
 }
@@ -121,7 +120,7 @@ extension SCBot {
     }
     
     private func heartbeat() async {
-        try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000))
+        try? await Task.sleep(nanoseconds: UInt64(heartbeatInterval * 1_000_000))
         
         self.socket.write(string: Payload(opcode: .heartbeat).encode())
         print("heartbeat sent")
@@ -137,7 +136,7 @@ extension SCBot: WebSocketDelegate {
             print("[SCBot] Connected!")
             sema.signal()
         case .text(let string):
-            print(string)
+//            print(string)
             let payload = Payload(json: string)
             gatewayResponse(of: payload)
         case .disconnected(let reason, let code):
@@ -160,6 +159,28 @@ extension SCBot: WebSocketDelegate {
         }
         
         switch payload.op {
+        case 0: // Ready
+            // decodes user object from Ready payload into self
+            if let userData = data["user"] as? JSONObject {
+                let user = User(id: Snowflake(uint64: UInt64(userData["id"] as! String)!),
+                                username: userData["username"] as! String,
+                                discriminator: userData["discriminator"] as! String,
+                                avatar: userData["avatar"] as? String,
+                                email: nil,
+                                bot: userData["bot"] as! Bool,
+                                verified: userData["verified"] as! Bool,
+                                banner: nil,
+                                mfaEnabled: userData["mfa_enabled"] as! Bool,
+                                flags: userData["flags"] as! Int,
+                                accentColor: nil,
+                                premiumType: nil
+                                )
+                self.user = user
+            } else {
+                // TODO: try fetch self from discord api
+            }
+            print("[SCBot] Ready!")
+            
         case 1: // Request heartbeat
             socket.write(string: Payload(opcode: .heartbeat).encode())
             
@@ -173,8 +194,8 @@ extension SCBot: WebSocketDelegate {
             }
             
         case 10: // Hello
-            interval = data["heartbeat_interval"] as! Double
-            let intervalWithJitter = (interval * Double.random(in: 0...1)) * 1_000_000
+            heartbeatInterval = data["heartbeat_interval"] as! Double
+            let intervalWithJitter = (heartbeatInterval * Double.random(in: 0...1)) * 1_000_000
             
             Task {
                 try? await Task.sleep(nanoseconds: UInt64(intervalWithJitter))
