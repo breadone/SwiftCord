@@ -1,9 +1,18 @@
 import XCTest
 @testable import SwiftCord
 
+fileprivate func getToken() -> String {
+    do {
+        return try String(contentsOfFile: "\(NSHomeDirectory())/Code/SwiftCord/Tests/SwiftCordTests/token.txt")
+    } catch {
+        print(error.localizedDescription)
+        return "oops"
+    }
+}
+
 final class SCBotTests: XCTestCase {
     func testBotConnection() async {
-        let bot = SCBot(token: "NzE1MDk2NTA4ODAxODc1OTkw.Xs4PhQ.03L3wGZDSrbOR3tM49wb0BZGWUU", intents: 1 << 16)
+        let bot = SCBot(token: getToken(), intents: 1 << 16)
         bot.presence = SCPresence(status: .idle, activity: "Star Citizen", activityType: .playing)
         bot.connect()
         try? await Task.sleep(nanoseconds: 120 * 1_000_000_000)
