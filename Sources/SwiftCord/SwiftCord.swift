@@ -56,7 +56,7 @@ extension SCBot {
         let data: JSONObject = [
             "token": botToken,
             "properties": [
-                "$os": "macOS",
+                "$os": "linux",
                 "$browser": "SwiftCord",
                 "$device": "SwiftCord"
             ],
@@ -135,12 +135,15 @@ extension SCBot: WebSocketDelegate {
         case .connected:
             print("[SCBot] Connected!")
             sema.signal()
+            
         case .text(let string):
-//            print(string)
             let payload = Payload(json: string)
+            print("[PAYLOAD]: \(payload.op)")
             gatewayResponse(of: payload)
+            
         case .disconnected(let reason, let code):
             print("[SCBot] Disconnected \(reason), \(code)")
+            
         default:
             break
         }
@@ -163,15 +166,15 @@ extension SCBot: WebSocketDelegate {
             // decodes user object from Ready payload into self
             if let userData = data["user"] as? JSONObject {
                 let user = User(id: Snowflake(uint64: UInt64(userData["id"] as! String)!),
-                                username: userData["username"] as! String,
-                                discriminator: userData["discriminator"] as! String,
+                                username: userData["username"] as? String ?? "Unknown Username",
+                                discriminator: userData["discriminator"] as? String ?? "Unknown Discriminator",
                                 avatar: userData["avatar"] as? String,
                                 email: nil,
-                                bot: userData["bot"] as! Bool,
-                                verified: userData["verified"] as! Bool,
+                                bot: userData["bot"] as? Bool ?? true,
+                                verified: userData["verified"] as? Bool ?? false,
                                 banner: nil,
-                                mfaEnabled: userData["mfa_enabled"] as! Bool,
-                                flags: userData["flags"] as! Int,
+                                mfaEnabled: userData["mfa_enabled"] as? Bool ?? false,
+                                flags: userData["flags"] as? Int ?? 0,
                                 accentColor: nil,
                                 premiumType: nil
                                 )

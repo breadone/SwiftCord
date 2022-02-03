@@ -15,7 +15,7 @@ public struct SCPresence {
     var since: Int
     
     public var arrayRepresentation: JSONObject {
-        return ["status": status, "afk": afk, "since": since, "activities": activities]
+        return ["status": status, "afk": afk, "since": since, "activities": [activities]]
     }
     
     public enum DiscordStatus: String {
@@ -41,7 +41,8 @@ public struct SCPresence {
     init(status: DiscordStatus, activity: String? = nil, activityType: DiscordActivityType = .playing) {
         self.status = status.rawValue
         self.afk = false
-        self.since = Int(Date().timeIntervalSince1970)
+//        self.since = Int(Date().timeIntervalSince1970)
+        self.since = 0
         
         if activity != nil {
             self.activities = [
