@@ -19,18 +19,22 @@ public struct Snowflake: Codable, Equatable, Hashable {
     }
     
     /// Makes a new Snowflake from a string representation of its ID
-    internal init(string: String) {
+    public init(string: String) {
         self.id = UInt64(string) ?? 0
     }
     
     /// Makes a new Snowflake from its ID
-    internal init(uint64: UInt64) {
+    public init(uint64: UInt64) {
         self.id = uint64
     }
     
     /// Makes a snowflake from the date of an event
-    internal init(date: Date) {
-        self.id = UInt64(DISCORD_EPOCH.distance(to: date)) << 22
+    public init(date: Date) {
+        self.id = UInt64(date.timeIntervalSince1970 * 1000 - DISCORD_EPOCH.timeIntervalSince1970) << 22
+    }
+    
+    public init() {
+        self.init(date: Date())
     }
     
 }

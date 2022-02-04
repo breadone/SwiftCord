@@ -19,6 +19,9 @@ public enum Endpoint {
     // MARK: User
     case getCurrentUser
     case getUser(Snowflake)
+    
+    // MARK: Command
+    case createCommand(Int)
 }
 
 extension Endpoint {
@@ -44,6 +47,9 @@ extension Endpoint {
             
         case let .getUser(id):
             return (.get, "/users/\(id.idString)")
+            
+        case let .createCommand(appID):
+            return (.post, "/applications/\(appID)/commands")
             
         }
     }

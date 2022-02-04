@@ -11,11 +11,16 @@ fileprivate func getToken() -> String {
 }
 
 final class SCBotTests: XCTestCase {
-    func testBotConnection() async {
-        let bot = SCBot(token: getToken(), intents: 1 << 16)
-        bot.presence = SCPresence(status: .online, activity: "Star Citizen", activityType: .watching)
+    func testBot() async {
+        let bot = SCBot(token: getToken(), appId: 715096508801875990, intents: 1 << 16)
+        bot.presence = SCPresence(status: .online, activity: "And Waiting.", activityType: .watching)
         bot.connect()
-        try? await Task.sleep(nanoseconds: 120 * 1_000_000_000)
+        
+        bot.registerCommand(name: "ping", description: "ping pong", type: .slashCommand) { _ in
+            print("got a command!")
+        }
+        
+        try? await Task.sleep(nanoseconds: 999 * 1_000_000_000) // 999 min
     }
 }
 

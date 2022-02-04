@@ -12,10 +12,12 @@ import Starscream
 public class SCBot {
     public let botToken: String
     public var botIntents: Int
+    public let appID: Int
     public internal(set) var user: User?
     
     public var options: SCOptions
     public var presence: SCPresence
+    public internal(set) var commands: [Command] = []
     
     public internal(set) var socket: WebSocket! = nil
     public internal(set) var heartbeatInterval: Double = 0
@@ -24,10 +26,12 @@ public class SCBot {
     /// Creates a new Discord Bot using SwiftCord
     /// - Parameters:
     ///   - token: Your bot token
+    ///   - appId: Your application ID, gotten from bot dashboard
     ///   - intents: The bot's intent integer, gotten from the bot dashboard
     ///   - options: An optional SwiftCord options object
-    public init(token: String, intents: Int, options: SCOptions = .default) {
+    public init(token: String, appId id: Int, intents: Int, options: SCOptions = .default) {
         self.botToken = token
+        self.appID = id
         self.botIntents = intents
         self.options = options
         self.presence = SCPresence(status: .online)
@@ -37,6 +41,7 @@ public class SCBot {
 
 // MARK: - Discord Functions
 extension SCBot {
+    /// Connects the bot to Discord's servers
     public func connect() {
         Task(priority: .high) {
             do {
@@ -67,6 +72,39 @@ extension SCBot {
         let identify = Payload(opcode: .identify, data: data).encode()
         socket.write(string: identify)
     }
+    
+    public func registerCommand(
+        name: String,
+        description: String,
+        type: Command.CommandType,
+        guildID: Snowflake? = nil,
+        req: Bool = true,
+        handler: @escaping (String) -> Void)
+    {
+        // creates command and adds it to bot's command list, breaks if already in command list
+        let command = Command(name: name,
+                              description: description,
+                              type: type,
+                              guildID: guildID,
+                              req: req,
+                              handler: handler)
+        
+        if self.commands.contains(command) {
+            print("[CMD]: Skipping registering existing command: \(command.name)")
+            return
+        } else {
+            self.commands.append(command)
+        }
+        
+        // register's command to discord
+        Task {
+            try await self.request(.createCommand(self.appID), params: ["json": command.encode()])
+            sema.signal()
+        }
+        sema.wait()
+        
+        print("[CMD]: Registered command: \(command.name)")
+    }
 }
 
 // MARK: - Network Functions
@@ -77,6 +115,7 @@ extension SCBot {
     ///   - params: Any HTTP Parameters to add to the request
     ///   - auth: Whether authorisation is enabled (Recommended true)
     /// - Returns: API Response as a dictionary
+    @discardableResult
     public func request(
         _ endpoint: Endpoint,
         params: [String: Any]? = nil,
@@ -123,7 +162,7 @@ extension SCBot {
         try? await Task.sleep(nanoseconds: UInt64(heartbeatInterval * 1_000_000))
         
         self.socket.write(string: Payload(opcode: .heartbeat).encode())
-        print("heartbeat sent")
+        print("[SCi]: HB Sent")
     }
     
 }
@@ -133,17 +172,17 @@ extension SCBot: WebSocketDelegate {
     public func didReceive(event: WebSocketEvent, client: WebSocket) {
         switch event {
         case .connected:
-            print("[SCBot] Connected!")
+            print("[BOT] Connected!")
             sema.signal()
             
         case .text(let string):
+            print(string)
             let payload = Payload(json: string)
-            print("[PAYLOAD]: \(payload.op)")
+            print("[PLD]: \(payload.op)")
             gatewayResponse(of: payload)
             
         case .disconnected(let reason, let code):
-            print("[SCBot] Disconnected \(reason), \(code)")
-            
+            print("[BOT] Disconnected \(reason), \(code)")
         default:
             break
         }
@@ -182,18 +221,18 @@ extension SCBot: WebSocketDelegate {
             } else {
                 // TODO: try fetch self from discord api
             }
-            print("[SCBot] Ready!")
+            print("[BOT] Ready!")
             
         case 1: // Request heartbeat
             socket.write(string: Payload(opcode: .heartbeat).encode())
             
         case 9: // Invalid session
             if (data["d"] as! Bool) {
-                print("[SCBot] Session invalidated, trying to reconnect...")
+                print("[ERR] Session invalidated, trying to reconnect...")
                 self.socket = nil
                 self.connect()
             } else {
-                print("[SCBot] Session invalidated, Socket indicated that reconnection is not possible")
+                print("[ERR] Session invalidated, Socket indicated that reconnection is not possible")
             }
             
         case 10: // Hello
@@ -203,16 +242,16 @@ extension SCBot: WebSocketDelegate {
             Task {
                 try? await Task.sleep(nanoseconds: UInt64(intervalWithJitter))
                 socket.write(string: Payload(opcode: .heartbeat).encode()) // writes inital heartbeat with jitter
-//                sema.signal()
+                sema.signal()
             }
-//            sema.wait()
+            sema.wait()
             
         case 11: // Heartbeat ack
-            print("Heartbeat acknowleged")
             Task(priority: .utility) {
                 await self.heartbeat()
+                sema.signal()
             }
-            
+            sema.wait()
         default:
             break
         }
