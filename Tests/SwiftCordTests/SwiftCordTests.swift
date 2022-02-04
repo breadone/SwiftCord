@@ -56,4 +56,10 @@ final class SCFoundationTests: XCTestCase {
         print(p)
     }
     
+    func testCommandEncoding() {
+        let c = Command(name: "ping", description: "pong", type: .slashCommand) { _ in }
+        print(c)
+        print(c.encode())
+    }
+    
 }

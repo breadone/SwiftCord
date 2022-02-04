@@ -22,9 +22,9 @@ internal struct Payload {
     
     /// Creates a payload with a JSON String
     init(json: String) {
-        let data = json.decode() as! [String: Any]
-        self.op = data["op"] as! Int
-        self.d = data["d"]!
+        let data = json.decode() as? [String: Any] ?? [:]
+        self.op = data["op"] as? Int ?? -1
+        self.d = data["d"] ?? []
         self.s = data["s"] as? Int
         self.t = data["t"] as? String
     }

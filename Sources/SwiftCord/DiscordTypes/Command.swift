@@ -22,6 +22,9 @@ public struct Command: JSONEncodable, Equatable {
     /// The Guild ID, if the command is Guild-specific
     let guildID: Snowflake?
     
+    /// Any Command Options
+    let options: [CommandOption]
+    
     /// 1-100 character description of the command
     let description: String
     
@@ -36,12 +39,14 @@ public struct Command: JSONEncodable, Equatable {
                   type: CommandType,
                   guildID: Snowflake? = nil,
                   req: Bool = true,
+                  options: [CommandOption] = [],
                   handler: @escaping (String) -> Void)
     {
         self.id = Snowflake()
         self.name = name
         self.description = description
         self.type = type.rawValue
+        self.options = options
         self.guildID = guildID
         self.required = req
         self.handler = handler
@@ -55,16 +60,42 @@ public struct Command: JSONEncodable, Equatable {
     public func encode() -> String {
         return ["name": self.name,
                 "type": self.type,
-                "description": self.description].encode()
+                "description": self.description,
+                "options": options].encode()
     }
 }
 
 // MARK: - Helper Types
 extension Command {
+    public struct CommandOption { // TODO: Write custom initialiser and docs for this
+        let type: Int
+        
+        let name: String
+        
+        let description: String
+        
+        let req: Bool
+        
+        let choices: Int
+    }
+    
     public enum CommandType: Int {
         case slashCommand = 1
         case user = 2
         case message = 3
+    }
+    
+    public enum CommandOptionType: Int { // not confusing at all discord
+        case subCommand = 1
+        case subCommandGroup = 2
+        case string = 3
+        case int = 4
+        case bool = 5
+        case user = 6
+        case channel = 7
+        case role = 8
+        case mentionable = 9
+        case number = 10
     }
 }
 

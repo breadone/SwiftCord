@@ -17,7 +17,7 @@ public class SCBot {
     
     public var options: SCOptions
     public var presence: SCPresence
-    public internal(set) var commands: [Command] = []
+    public internal(set) var commands: [Command]
     
     public internal(set) var socket: WebSocket! = nil
     public internal(set) var heartbeatInterval: Double = 0
@@ -79,6 +79,7 @@ extension SCBot {
         type: Command.CommandType,
         guildID: Snowflake? = nil,
         req: Bool = true,
+        options: [Command.CommandOption] = [],
         handler: @escaping (String) -> Void)
     {
         // creates command and adds it to bot's command list, breaks if already in command list
@@ -86,7 +87,7 @@ extension SCBot {
                               description: description,
                               type: type,
                               guildID: guildID,
-                              req: req,
+                              req: req, options: options,
                               handler: handler)
         
         if self.commands.contains(command) {
@@ -98,7 +99,9 @@ extension SCBot {
         
         // register's command to discord
         Task {
-            try await self.request(.createCommand(self.appID), params: ["json": command.encode()])
+            try await self.request(.createCommand(self.appID),
+                                   headers: ["Content-Type": "application/json"],
+                                   body: JSONSerialization.data(withJSONObject: command.encode(), options: .fragmentsAllowed))
             sema.signal()
         }
         sema.wait()
@@ -118,13 +121,15 @@ extension SCBot {
     @discardableResult
     public func request(
         _ endpoint: Endpoint,
-        params: [String: Any]? = nil,
+        urlParams: [String: Any]? = nil,
+        headers: [String: String]? = nil,
+        body: Data? = nil,
         auth: Bool = true
     ) async throws -> JSONObject {
         // Step one: get url string and add all the params
         var urlString = "https://discord.com/api/v\(options.discordApiVersion)\(endpoint.info.url)"
         
-        if let params = params {
+        if let params = urlParams {
             urlString.append("?")
             urlString += params.map { "\($0)=\($1)" }.joined(separator: "&")
         }
@@ -136,6 +141,16 @@ extension SCBot {
         
         if auth {
             request.addValue("Bot \(self.botToken)", forHTTPHeaderField: "Authorization")
+        }
+        
+        if let headers = headers {
+            for (header, value) in headers {
+                request.addValue(value, forHTTPHeaderField: header)
+            }
+        }
+        
+        if let body = body {
+            request.httpBody = body
         }
         
         do {
