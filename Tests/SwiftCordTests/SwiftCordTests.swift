@@ -16,9 +16,11 @@ final class SCBotTests: XCTestCase {
         bot.presence = SCPresence(status: .online, activity: "And Waiting.", activityType: .watching)
         bot.connect()
         
-        bot.registerCommand(name: "ping", description: "ping pong", type: .slashCommand) { _ in
-            print("got a command!")
+        bot.registerCommand(name: "piss", description: "poo", type: .slashCommand) { id in
+            bot.sendMessage(Snowflake(string: id), message: "Hey.")
         }
+        
+//        bot.sendMessage(Snowflake(uint64: 715391148096618571), message: "Alive.")
         
         try? await Task.sleep(nanoseconds: 999 * 1_000_000_000) // 999 min
     }
@@ -54,12 +56,6 @@ final class SCFoundationTests: XCTestCase {
         let p = Payload(opcode: .identify, data: data).encode()
 //        let x = Payload(json: p)
         print(p)
-    }
-    
-    func testCommandEncoding() {
-        let c = Command(name: "ping", description: "pong", type: .slashCommand) { _ in }
-        print(c)
-        print(c.encode())
     }
     
 }

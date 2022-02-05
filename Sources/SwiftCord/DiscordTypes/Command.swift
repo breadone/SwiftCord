@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - Main Command Struct
-public struct Command: JSONEncodable, Equatable {
+public struct Command: Equatable {
     
     /// Command ID
     let id: Snowflake
@@ -29,16 +29,24 @@ public struct Command: JSONEncodable, Equatable {
     let description: String
     
     /// Whether the parameter is required or not (default true)
-    let required: Bool
+    let defaultPermission: Bool
     
     /// The command to execute when the command is called
     let handler: (String) -> Void
+    
+    internal var arrayRepresentation: JSONObject {
+        ["name": self.name,
+         "type": self.type,
+         "description": self.description,
+         "default_permission": self.defaultPermission,
+         "options": options]
+    }
     
     internal init(name: String,
                   description: String,
                   type: CommandType,
                   guildID: Snowflake? = nil,
-                  req: Bool = true,
+                  enabledByDefault: Bool = true,
                   options: [CommandOption] = [],
                   handler: @escaping (String) -> Void)
     {
@@ -48,20 +56,13 @@ public struct Command: JSONEncodable, Equatable {
         self.type = type.rawValue
         self.options = options
         self.guildID = guildID
-        self.required = req
+        self.defaultPermission = enabledByDefault
         self.handler = handler
     }
     
     // MARK: Methods
     public static func == (lhs: Command, rhs: Command) -> Bool {
         return lhs.id == rhs.id
-    }
-    
-    public func encode() -> String {
-        return ["name": self.name,
-                "type": self.type,
-                "description": self.description,
-                "options": options].encode()
     }
 }
 

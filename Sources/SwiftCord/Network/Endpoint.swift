@@ -15,6 +15,7 @@ public enum Endpoint {
     case modifyChannel(Snowflake)
     case deleteChannel(Snowflake)
     case getChannelMessages(Snowflake)
+    case createMessage(Snowflake)
     
     // MARK: User
     case getCurrentUser
@@ -41,6 +42,9 @@ extension Endpoint {
             
         case let .getChannelMessages(id):
             return (.get, "/channels/\(id.idString)/messages")
+            
+        case let .createMessage(id):
+            return (.post, "/channels/\(id.idString)/messages")
             
         case .getCurrentUser:
             return (.get, "/users/@me")

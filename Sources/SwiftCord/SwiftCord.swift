@@ -17,7 +17,7 @@ public class SCBot {
     
     public var options: SCOptions
     public var presence: SCPresence
-    public internal(set) var commands: [Command]
+    public internal(set) var commands: [Command] = []
     
     public internal(set) var socket: WebSocket! = nil
     public internal(set) var heartbeatInterval: Double = 0
@@ -52,7 +52,7 @@ extension SCBot {
                 self.socket.delegate = self
                 socket.connect()
             } catch {
-                print("[SCERROR]: \(error.localizedDescription)")
+                print("[ERR] \(error.localizedDescription)")
             }
         }
         sema.wait() // waits for WS Connection
@@ -78,7 +78,7 @@ extension SCBot {
         description: String,
         type: Command.CommandType,
         guildID: Snowflake? = nil,
-        req: Bool = true,
+        enabledByDefault: Bool = true,
         options: [Command.CommandOption] = [],
         handler: @escaping (String) -> Void)
     {
@@ -87,26 +87,34 @@ extension SCBot {
                               description: description,
                               type: type,
                               guildID: guildID,
-                              req: req, options: options,
+                              enabledByDefault: enabledByDefault,
+                              options: options,
                               handler: handler)
         
-        if self.commands.contains(command) {
-            print("[CMD]: Skipping registering existing command: \(command.name)")
-            return
-        } else {
-            self.commands.append(command)
-        }
+        self.commands.append(command)
         
         // register's command to discord
         Task {
             try await self.request(.createCommand(self.appID),
                                    headers: ["Content-Type": "application/json"],
-                                   body: JSONSerialization.data(withJSONObject: command.encode(), options: .fragmentsAllowed))
+                                   body: JSONSerialization.data(withJSONObject: command.arrayRepresentation, options: .fragmentsAllowed))
             sema.signal()
         }
         sema.wait()
         
-        print("[CMD]: Registered command: \(command.name)")
+        print("[CMD] Registered command: \(command.name)")
+    }
+    
+    public func sendMessage(_ channelID: Snowflake, message: String) {
+        let content: JSONObject = ["content": message, "tts": false]
+        
+        Task {
+            try await self.request(.createMessage(channelID),
+                                   headers: ["Content-Type": "application/json"],
+                                   body: JSONSerialization.data(withJSONObject: content, options: .fragmentsAllowed))
+            sema.signal()
+        }
+        sema.wait()
     }
 }
 
@@ -158,6 +166,8 @@ extension SCBot {
             let response = urlresponse as? HTTPURLResponse
             
             switch response?.statusCode { // probably more to come idk
+            case 400:
+                throw SCError.badToken // temporary
             case 401: // unauthorised
                 throw SCError.badToken
             case 404:
@@ -177,7 +187,7 @@ extension SCBot {
         try? await Task.sleep(nanoseconds: UInt64(heartbeatInterval * 1_000_000))
         
         self.socket.write(string: Payload(opcode: .heartbeat).encode())
-        print("[SCi]: HB Sent")
+        print("[SCi] HB Sent")
     }
     
 }
@@ -193,7 +203,7 @@ extension SCBot: WebSocketDelegate {
         case .text(let string):
             print(string)
             let payload = Payload(json: string)
-            print("[PLD]: \(payload.op)")
+            print("[PLD] \(payload.op)")
             gatewayResponse(of: payload)
             
         case .disconnected(let reason, let code):
@@ -216,27 +226,8 @@ extension SCBot: WebSocketDelegate {
         }
         
         switch payload.op {
-        case 0: // Ready
-            // decodes user object from Ready payload into self
-            if let userData = data["user"] as? JSONObject {
-                let user = User(id: Snowflake(uint64: UInt64(userData["id"] as! String)!),
-                                username: userData["username"] as? String ?? "Unknown Username",
-                                discriminator: userData["discriminator"] as? String ?? "Unknown Discriminator",
-                                avatar: userData["avatar"] as? String,
-                                email: nil,
-                                bot: userData["bot"] as? Bool ?? true,
-                                verified: userData["verified"] as? Bool ?? false,
-                                banner: nil,
-                                mfaEnabled: userData["mfa_enabled"] as? Bool ?? false,
-                                flags: userData["flags"] as? Int ?? 0,
-                                accentColor: nil,
-                                premiumType: nil
-                                )
-                self.user = user
-            } else {
-                // TODO: try fetch self from discord api
-            }
-            print("[BOT] Ready!")
+        case 0: // Dispatch
+            self.handleEvent(of: payload)
             
         case 1: // Request heartbeat
             socket.write(string: Payload(opcode: .heartbeat).encode())
@@ -264,11 +255,64 @@ extension SCBot: WebSocketDelegate {
         case 11: // Heartbeat ack
             Task(priority: .utility) {
                 await self.heartbeat()
-                sema.signal()
             }
-            sema.wait()
+            
         default:
             break
+        }
+    }
+    
+    func handleEvent(of payload: Payload) {
+        var data: JSONObject = [:]
+        
+        if payload.d as? NSNull == nil { // checks Payload.d is not null
+            if let d = payload.d as? JSONObject {
+                data = d
+            } else {
+                data["d"] = payload.d
+            }
+        }
+        
+        switch payload.t {
+        case "READY": // Ready, can decode user (among other things but dont caare)
+            if let userData = data["user"] as? JSONObject {
+                let user = User(id: Snowflake(uint64: UInt64(userData["id"] as! String)!),
+                                username: userData["username"] as? String ?? "Unknown Username",
+                                discriminator: userData["discriminator"] as? String ?? "Unknown Discriminator",
+                                avatar: userData["avatar"] as? String,
+                                email: nil,
+                                bot: userData["bot"] as? Bool ?? true,
+                                verified: userData["verified"] as? Bool ?? false,
+                                banner: nil,
+                                mfaEnabled: userData["mfa_enabled"] as? Bool ?? false,
+                                flags: userData["flags"] as? Int ?? 0,
+                                accentColor: nil,
+                                premiumType: nil
+                )
+                self.user = user
+                print("[BOT] Ready!")
+            }
+            
+        case "INTERACTION_CREATE": // command was used
+            let name: String, id: Snowflake, channelID: Snowflake
+            guard let commandData = data["data"] as? JSONObject else { print("[ERR] Could not parse command"); return }
+            
+            // parses the data from the command
+            name = commandData["name"] as? String ?? "Unknown name"
+            id = Snowflake(uint64: UInt64(commandData["id"] as! String)!)
+            
+            channelID = Snowflake(uint64: UInt64(data["channel_id"] as! String)!)
+            
+            // search command array for matching command and execute
+            for command in self.commands {
+                if command.name == name {
+                    command.handler(channelID.idString)
+                    
+                }
+            }
+            
+        default:
+            print(payload.t ?? "how")
         }
     }
 }
