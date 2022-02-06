@@ -7,7 +7,7 @@
 
 import Foundation
 
-// MARK: - Main Command Struct
+// MARK: - Command
 public struct Command: Equatable {
     
     /// Command ID
@@ -32,7 +32,7 @@ public struct Command: Equatable {
     let defaultPermission: Bool
     
     /// The command to execute when the command is called
-    let handler: (String) -> Void
+    let handler: (CommandInfo) -> Void
     
     internal var arrayRepresentation: JSONObject {
         ["name": self.name,
@@ -48,7 +48,7 @@ public struct Command: Equatable {
                   guildID: Snowflake? = nil,
                   enabledByDefault: Bool = true,
                   options: [CommandOption] = [],
-                  handler: @escaping (String) -> Void)
+                  handler: @escaping (CommandInfo) -> Void)
     {
         self.id = Snowflake()
         self.name = name
@@ -100,3 +100,15 @@ extension Command {
     }
 }
 
+// MARK: - CommandInfo
+public struct CommandInfo {
+    public let channelID: Snowflake
+    public let messageID: Snowflake
+    public let User: User
+    public let bot: SCBot
+    
+    public func reply(with message: String) {
+        self.bot.replyToMessage(self.channelID, message: self.messageID, message: message)
+    }
+    
+}

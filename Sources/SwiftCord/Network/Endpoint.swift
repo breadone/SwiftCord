@@ -10,6 +10,8 @@ import Foundation
 public enum Endpoint {
     case gateway
     
+    case custom(HTTPMethod, String)
+    
     // MARK: Channel
     case getChannel(Snowflake)
     case modifyChannel(Snowflake)
@@ -21,13 +23,17 @@ public enum Endpoint {
     case getCurrentUser
     case getUser(Snowflake)
     
-    // MARK: Command
+    // MARK: Interaction
     case createCommand(Int)
+    case replyToInteraction(Snowflake, String)
 }
 
 extension Endpoint {
     var info: (method: HTTPMethod, url: String) {
         switch self {
+        case let .custom(method, url):
+            return (method, url)
+            
         case .gateway:
             return (.get, "/gateway/bot")
             
@@ -54,6 +60,9 @@ extension Endpoint {
             
         case let .createCommand(appID):
             return (.post, "/applications/\(appID)/commands")
+            
+        case let .replyToInteraction(interactionID, interactionToken):
+            return (.post, "/interactions/\(interactionID.idString)/\(interactionToken)/callback")
             
         }
     }

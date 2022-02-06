@@ -80,7 +80,7 @@ extension SCBot {
         guildID: Snowflake? = nil,
         enabledByDefault: Bool = true,
         options: [Command.CommandOption] = [],
-        handler: @escaping (String) -> Void)
+        handler: @escaping (CommandInfo) -> Void)
     {
         // creates command and adds it to bot's command list, breaks if already in command list
         let command = Command(name: name,
@@ -95,9 +95,10 @@ extension SCBot {
         
         // register's command to discord
         Task {
-            try await self.request(.createCommand(self.appID),
+            let response = try await self.request(.createCommand(self.appID),
                                    headers: ["Content-Type": "application/json"],
                                    body: JSONSerialization.data(withJSONObject: command.arrayRepresentation, options: .fragmentsAllowed))
+//            print("\n\nRESPONSE", response)
             sema.signal()
         }
         sema.wait()
@@ -107,6 +108,20 @@ extension SCBot {
     
     public func sendMessage(_ channelID: Snowflake, message: String) {
         let content: JSONObject = ["content": message, "tts": false]
+        
+        Task {
+            try await self.request(.createMessage(channelID),
+                                   headers: ["Content-Type": "application/json"],
+                                   body: JSONSerialization.data(withJSONObject: content, options: .fragmentsAllowed))
+            sema.signal()
+        }
+        sema.wait()
+    }
+    
+    public func replyToMessage(_ channelID: Snowflake, message messageID: Snowflake, message: String) {
+        let content: JSONObject = ["content": message,
+                                   "tts": false,
+                                   "message_reference": ["message_id": messageID.id]]
         
         Task {
             try await self.request(.createMessage(channelID),
@@ -276,39 +291,44 @@ extension SCBot: WebSocketDelegate {
         switch payload.t {
         case "READY": // Ready, can decode user (among other things but dont caare)
             if let userData = data["user"] as? JSONObject {
-                let user = User(id: Snowflake(uint64: UInt64(userData["id"] as! String)!),
-                                username: userData["username"] as? String ?? "Unknown Username",
-                                discriminator: userData["discriminator"] as? String ?? "Unknown Discriminator",
-                                avatar: userData["avatar"] as? String,
-                                email: nil,
-                                bot: userData["bot"] as? Bool ?? true,
-                                verified: userData["verified"] as? Bool ?? false,
-                                banner: nil,
-                                mfaEnabled: userData["mfa_enabled"] as? Bool ?? false,
-                                flags: userData["flags"] as? Int ?? 0,
-                                accentColor: nil,
-                                premiumType: nil
-                )
-                self.user = user
+                self.user = User(json: userData)
                 print("[BOT] Ready!")
             }
             
         case "INTERACTION_CREATE": // command was used
-            let name: String, id: Snowflake, channelID: Snowflake
+            let commandName: String, commandID: Snowflake
+            let interactionToken: String, interactionID: Snowflake
+            let channelID: Snowflake, messageID: Snowflake
+            
             guard let commandData = data["data"] as? JSONObject else { print("[ERR] Could not parse command"); return }
             
             // parses the data from the command
-            name = commandData["name"] as? String ?? "Unknown name"
-            id = Snowflake(uint64: UInt64(commandData["id"] as! String)!)
+            commandName = commandData["name"] as? String ?? "Unknown name"
+            commandID = Snowflake(string: commandData["id"] as! String)
             
-            channelID = Snowflake(uint64: UInt64(data["channel_id"] as! String)!)
+            interactionToken = data["token"] as? String ?? ""
+            interactionID = Snowflake(string: data["id"] as! String)
+            
+            channelID = Snowflake(string: data["channel_id"] as! String)
+//            messageID = Snowflake(string: data["id"] as! String)
+            
+            let memberData = data["member"] as! JSONObject
+            let user = User(json: memberData["user"] as! JSONObject)
+            
+            let info = CommandInfo(channelID: channelID, messageID: Snowflake(), User: user, bot: self)
             
             // search command array for matching command and execute
             for command in self.commands {
-                if command.name == name {
-                    command.handler(channelID.idString)
-                    
+                if command.name == commandName {
+                    command.handler(info)
                 }
+            }
+            
+            // reply to interaction
+            let data: JSONObject = ["type": 4, "data": ["content": "what", "tts": false]]
+            Task {
+                try await self.request(.replyToInteraction(interactionID, interactionToken),
+                                       body: JSONSerialization.data(withJSONObject: data, options: .fragmentsAllowed))
             }
             
         default:
