@@ -20,7 +20,7 @@ final class SCBotTests: XCTestCase {
 //        }
         
         bot.registerCommand(name: "ping", description: "what do you think", type: .slashCommand) { info in
-//            bot.sendMessage(info.channelID, message: "pong")
+            return "pong"
         }
         
         bot.connect()

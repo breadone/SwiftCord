@@ -31,8 +31,8 @@ public struct Command: Equatable {
     /// Whether the parameter is required or not (default true)
     let defaultPermission: Bool
     
-    /// The command to execute when the command is called
-    let handler: (CommandInfo) -> Void
+    /// The command to execute when the command is called, returns the message to reply with
+    let handler: (CommandInfo) -> String
     
     internal var arrayRepresentation: JSONObject {
         ["name": self.name,
@@ -48,7 +48,7 @@ public struct Command: Equatable {
                   guildID: Snowflake? = nil,
                   enabledByDefault: Bool = true,
                   options: [CommandOption] = [],
-                  handler: @escaping (CommandInfo) -> Void)
+                  handler: @escaping (CommandInfo) -> String)
     {
         self.id = Snowflake()
         self.name = name

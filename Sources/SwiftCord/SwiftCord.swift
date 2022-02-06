@@ -80,7 +80,7 @@ extension SCBot {
         guildID: Snowflake? = nil,
         enabledByDefault: Bool = true,
         options: [Command.CommandOption] = [],
-        handler: @escaping (CommandInfo) -> Void)
+        handler: @escaping (CommandInfo) -> String)
     {
         // creates command and adds it to bot's command list, breaks if already in command list
         let command = Command(name: name,
@@ -216,7 +216,7 @@ extension SCBot: WebSocketDelegate {
             sema.signal()
             
         case .text(let string):
-            print(string)
+//            print(string)
             let payload = Payload(json: string)
             print("[PLD] \(payload.op)")
             gatewayResponse(of: payload)
@@ -320,15 +320,16 @@ extension SCBot: WebSocketDelegate {
             // search command array for matching command and execute
             for command in self.commands {
                 if command.name == commandName {
-                    command.handler(info)
+                    let reply = command.handler(info)
+                    
+                    // reply to interaction
+                    let data: JSONObject = ["type": 4, "data": ["content": reply, "tts": false]]
+                    Task {
+                        try await self.request(.replyToInteraction(interactionID, interactionToken),
+                                               headers: ["Content-Type": "application/json"],
+                                               body: JSONSerialization.data(withJSONObject: data, options: .fragmentsAllowed))
+                    }
                 }
-            }
-            
-            // reply to interaction
-            let data: JSONObject = ["type": 4, "data": ["content": "what", "tts": false]]
-            Task {
-                try await self.request(.replyToInteraction(interactionID, interactionToken),
-                                       body: JSONSerialization.data(withJSONObject: data, options: .fragmentsAllowed))
             }
             
         default:
