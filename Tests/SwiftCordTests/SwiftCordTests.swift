@@ -15,13 +15,12 @@ final class SCBotTests: XCTestCase {
         let bot = SCBot(token: getToken(), appId: 715096508801875990, intents: 1 << 16)
         bot.presence = SCPresence(status: .online, activity: "And Waiting.", activityType: .watching)
         
-//        bot.registerCommand(name: "piss", description: "poo", type: .slashCommand) { info in
-//            info.reply(with: "Hey.")
-//        }
-        
-        bot.registerCommand(name: "ping", description: "what do you think", type: .slashCommand) { info in
+        let ping = Command(name: "ping", description: "what do you think", type: .slashCommand) { _ in
             return "pong"
         }
+        
+        
+        bot.registerCommand(ping)
         
         bot.connect()
 //        bot.replyToMessage(Snowflake(uint64: 715391148096618571), message: Snowflake(uint64: 939483073488236554), message: "You Think Commands Will Work On Me.")

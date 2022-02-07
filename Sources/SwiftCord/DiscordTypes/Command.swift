@@ -31,8 +31,14 @@ public struct Command: Equatable {
     /// Whether the parameter is required or not (default true)
     let defaultPermission: Bool
     
-    /// The command to execute when the command is called, returns the message to reply with
-    let handler: (CommandInfo) -> String
+    /// The function to execute when the command is called
+    /// Return the message the bot should reply with
+    var handlerWithMessage: ((CommandInfo) -> String)? = nil
+    
+    /// The function to execute when the command is called
+    var handler: ((CommandInfo) -> Void)? = nil
+    
+    internal var handlerReturnsMessage: Bool
     
     internal var arrayRepresentation: JSONObject {
         ["name": self.name,
@@ -42,7 +48,8 @@ public struct Command: Equatable {
          "options": options]
     }
     
-    internal init(name: String,
+    /// Create a command object, that replies with a message immediately
+    public init(name: String,
                   description: String,
                   type: CommandType,
                   guildID: Snowflake? = nil,
@@ -57,7 +64,28 @@ public struct Command: Equatable {
         self.options = options
         self.guildID = guildID
         self.defaultPermission = enabledByDefault
+        self.handlerWithMessage = handler
+        self.handlerReturnsMessage = true
+    }
+    
+    /// Creates a command object that does not necessarily reply immediately with a message
+    public init(name: String,
+                  description: String,
+                  type: CommandType,
+                  guildID: Snowflake? = nil,
+                  enabledByDefault: Bool = true,
+                  options: [CommandOption] = [],
+                  handler: @escaping (CommandInfo) -> Void)
+    {
+        self.id = Snowflake()
+        self.name = name
+        self.description = description
+        self.type = type.rawValue
+        self.options = options
+        self.guildID = guildID
+        self.defaultPermission = enabledByDefault
         self.handler = handler
+        self.handlerReturnsMessage = false
     }
     
     // MARK: Methods
@@ -102,13 +130,8 @@ extension Command {
 
 // MARK: - CommandInfo
 public struct CommandInfo {
-    public let channelID: Snowflake
-    public let messageID: Snowflake
-    public let User: User
-    public let bot: SCBot
-    
-    public func reply(with message: String) {
-        self.bot.replyToMessage(self.channelID, message: self.messageID, message: message)
-    }
+    public var channelID: Snowflake
+    public var guildID: Snowflake
+    public var user: User
     
 }

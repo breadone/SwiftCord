@@ -73,35 +73,15 @@ extension SCBot {
         socket.write(string: identify)
     }
     
-    public func registerCommand(
-        name: String,
-        description: String,
-        type: Command.CommandType,
-        guildID: Snowflake? = nil,
-        enabledByDefault: Bool = true,
-        options: [Command.CommandOption] = [],
-        handler: @escaping (CommandInfo) -> String)
-    {
-        // creates command and adds it to bot's command list, breaks if already in command list
-        let command = Command(name: name,
-                              description: description,
-                              type: type,
-                              guildID: guildID,
-                              enabledByDefault: enabledByDefault,
-                              options: options,
-                              handler: handler)
-        
+    public func registerCommand(_ command: Command) {
         self.commands.append(command)
         
         // register's command to discord
         Task {
-            let response = try await self.request(.createCommand(self.appID),
+            try await self.request(.createCommand(self.appID),
                                    headers: ["Content-Type": "application/json"],
                                    body: JSONSerialization.data(withJSONObject: command.arrayRepresentation, options: .fragmentsAllowed))
-//            print("\n\nRESPONSE", response)
-            sema.signal()
         }
-        sema.wait()
         
         print("[CMD] Registered command: \(command.name)")
     }
@@ -113,9 +93,7 @@ extension SCBot {
             try await self.request(.createMessage(channelID),
                                    headers: ["Content-Type": "application/json"],
                                    body: JSONSerialization.data(withJSONObject: content, options: .fragmentsAllowed))
-            sema.signal()
         }
-        sema.wait()
     }
     
     public func replyToMessage(_ channelID: Snowflake, message messageID: Snowflake, message: String) {
@@ -127,9 +105,7 @@ extension SCBot {
             try await self.request(.createMessage(channelID),
                                    headers: ["Content-Type": "application/json"],
                                    body: JSONSerialization.data(withJSONObject: content, options: .fragmentsAllowed))
-            sema.signal()
         }
-        sema.wait()
     }
 }
 
@@ -181,11 +157,11 @@ extension SCBot {
             let response = urlresponse as? HTTPURLResponse
             
             switch response?.statusCode { // probably more to come idk
-            case 400:
-                throw SCError.badToken // temporary
+            case 400: // bad request
+                throw  URLError(.unsupportedURL)
             case 401: // unauthorised
                 throw SCError.badToken
-            case 404:
+            case 404: // not found
                 throw URLError(.badURL)
             default:
                 break
@@ -202,7 +178,6 @@ extension SCBot {
         try? await Task.sleep(nanoseconds: UInt64(heartbeatInterval * 1_000_000))
         
         self.socket.write(string: Payload(opcode: .heartbeat).encode())
-        print("[SCi] HB Sent")
     }
     
 }
@@ -212,13 +187,13 @@ extension SCBot: WebSocketDelegate {
     public func didReceive(event: WebSocketEvent, client: WebSocket) {
         switch event {
         case .connected:
-            print("[BOT] Connected!")
+            print("[BOT] Connected...")
             sema.signal()
             
         case .text(let string):
 //            print(string)
             let payload = Payload(json: string)
-            print("[PLD] \(payload.op)")
+//            print("[PLD] \(payload.op)")
             gatewayResponse(of: payload)
             
         case .disconnected(let reason, let code):
@@ -296,44 +271,59 @@ extension SCBot: WebSocketDelegate {
             }
             
         case "INTERACTION_CREATE": // command was used
-            let commandName: String, commandID: Snowflake
+            let commandName: String //, commandID: Snowflake
             let interactionToken: String, interactionID: Snowflake
-            let channelID: Snowflake, messageID: Snowflake
+            let channelID: Snowflake, guildID: Snowflake
             
             guard let commandData = data["data"] as? JSONObject else { print("[ERR] Could not parse command"); return }
             
-            // parses the data from the command
+            // parses the data from the interaction
             commandName = commandData["name"] as? String ?? "Unknown name"
-            commandID = Snowflake(string: commandData["id"] as! String)
+//            commandID = Snowflake(string: commandData["id"] as! String)
             
             interactionToken = data["token"] as? String ?? ""
             interactionID = Snowflake(string: data["id"] as! String)
             
             channelID = Snowflake(string: data["channel_id"] as! String)
-//            messageID = Snowflake(string: data["id"] as! String)
+            guildID = Snowflake(string: data["guild_id"] as! String)
             
             let memberData = data["member"] as! JSONObject
             let user = User(json: memberData["user"] as! JSONObject)
             
-            let info = CommandInfo(channelID: channelID, messageID: Snowflake(), User: user, bot: self)
+            let info = CommandInfo(channelID: channelID, guildID: guildID, user: user)
             
             // search command array for matching command and execute
             for command in self.commands {
                 if command.name == commandName {
-                    let reply = command.handler(info)
+                    let data: JSONObject
                     
-                    // reply to interaction
-                    let data: JSONObject = ["type": 4, "data": ["content": reply, "tts": false]]
+                    if command.handlerReturnsMessage {
+                        let message = command.handlerWithMessage!(info)
+                        data = ["type": 4, "data": ["content": message, "tts": false]]
+                    } else {
+                        command.handler!(info)
+                        data = ["type": 1]
+                    }
+                    
                     Task {
                         try await self.request(.replyToInteraction(interactionID, interactionToken),
                                                headers: ["Content-Type": "application/json"],
                                                body: JSONSerialization.data(withJSONObject: data, options: .fragmentsAllowed))
                     }
+                    return
                 }
             }
             
+            print("[WRN] Unhandled Command! '\(commandName)'")
+            Task {
+                try await self.request(.replyToInteraction(interactionID, interactionToken),
+                                       headers: ["Content-Type": "application/json"],
+                                       body: JSONSerialization.data(withJSONObject: ["type": 4, "data": ["content": "Command not found", "tts": false]],
+                                                                    options: .fragmentsAllowed))
+            }
+            
         default:
-            print(payload.t ?? "how")
+            print("[EVT] \(payload.t ?? "UNKNOWN_EVENT")")
         }
     }
 }
