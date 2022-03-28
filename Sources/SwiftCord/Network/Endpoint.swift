@@ -25,6 +25,7 @@ public enum Endpoint {
     
     // MARK: Interaction
     case createCommand(Int)
+    case deleteCommand(Int)
     case replyToInteraction(Snowflake, String)
 }
 
@@ -60,6 +61,9 @@ extension Endpoint {
             
         case let .createCommand(appID):
             return (.post, "/applications/\(appID)/commands")
+            
+        case let .deleteCommand(appID):
+            return (.delete, "/applications/\(appID)/commands")
             
         case let .replyToInteraction(interactionID, interactionToken):
             return (.post, "/interactions/\(interactionID.idString)/\(interactionToken)/callback")

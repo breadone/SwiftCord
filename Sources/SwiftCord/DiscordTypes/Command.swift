@@ -41,11 +41,22 @@ public struct Command: Equatable {
     internal var handlerReturnsMessage: Bool
     
     internal var arrayRepresentation: JSONObject {
+        var cmd: JSONObject =
         ["name": self.name,
          "type": self.type,
          "description": self.description,
          "default_permission": self.defaultPermission,
-         "options": options]
+         "options": []]
+        
+        if !options.isEmpty {
+            var opts = [JSONObject]()
+            for option in options {
+                opts.append(option.arrayRepresentation)
+            }
+            cmd["options"] = opts
+        }
+        
+        return cmd
     }
     
     /// Create a command object, that replies with a message immediately
@@ -106,6 +117,10 @@ extension Command {
         let req: Bool
         
         let choices: Int
+        
+        var arrayRepresentation: JSONObject {
+            ["name": name, "description": description, "type": type, "required": req]
+        }
     }
     
     public enum CommandType: Int {

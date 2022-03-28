@@ -1,5 +1,6 @@
 import XCTest
 @testable import SwiftCord
+import SwiftyJSON
 
 fileprivate func getToken() -> String {
     do {
@@ -19,8 +20,12 @@ final class SCBotTests: XCTestCase {
             return "pong"
         }
         
+        let pingUser = Command(name: "pingUser", description: "ping specified user", type: .slashCommand) { info in
+            return "You. <@\(info.user.id)>."
+        }
         
         bot.registerCommand(ping)
+        bot.registerCommand(pingUser)
         
         bot.connect()
 //        bot.replyToMessage(Snowflake(uint64: 715391148096618571), message: Snowflake(uint64: 939483073488236554), message: "You Think Commands Will Work On Me.")
@@ -45,22 +50,24 @@ final class SCFoundationTests: XCTestCase {
         XCTAssertEqual(packet.op, 10)
     }
     
-    func testPresenceCoding() {
-        let data: JSONObject = [
-            "token": "aaaaaa",
-            "properties": [
-                "$os": "macOS",
-                "$browser": "SwiftCord",
-                "$device": "SwiftCord"
-            ],
-            "presence": SCPresence(status: .online, activity: "Star Citizen").arrayRepresentation,
-            "compress": false,
-            "intents": 8
-        ]
+    func testCommandEncoding() {
+        let opt = Command.CommandOption(type: 0, name: "opt", description: "optd", req: true, choices: 0)
+        let cmd = Command(name: "test", description: "desc", type: .slashCommand, options: [opt]) { _ in }
         
-        let p = Payload(opcode: .identify, data: data).encode()
-//        let x = Payload(json: p)
-        print(p)
+        print(cmd.arrayRepresentation.encode())
     }
     
+    func testFileWrite() {
+        CMDFile.writeCommandsFile([
+            Command(name: "one", description: "ondesc", type: .message, handler: {_ in}).arrayRepresentation,
+            Command(name: "two", description: "twodesc", type: .slashCommand, handler: {_ in}).arrayRepresentation
+        ].encode())
+    }
+    
+    func testFileRead() {
+        let cs = CMDFile.readCommandsFile()
+        for c in cs {
+            print(c.name, c.description)
+        }
+    }
 }
