@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct User: Codable {
+public struct User: Codable, Hashable {
     
     /// the user's id
     public let id: Snowflake

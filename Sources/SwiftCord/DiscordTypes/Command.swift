@@ -8,10 +8,13 @@
 import Foundation
 
 // MARK: - Command
-public struct Command: Equatable {
-    
+public struct Command: Equatable, Hashable {
+    public var hashValue: Int {
+        Int(self.commandID.id)
+    }
+
     /// Command ID
-    let id: Snowflake
+    let commandID: Snowflake
     
     /// The type of Application Command
     let type: Int
@@ -68,7 +71,7 @@ public struct Command: Equatable {
                   options: [CommandOption] = [],
                   handler: @escaping (CommandInfo) -> String)
     {
-        self.id = Snowflake()
+        self.commandID = Snowflake()
         self.name = name
         self.description = description
         self.type = type.rawValue
@@ -88,7 +91,7 @@ public struct Command: Equatable {
                   options: [CommandOption] = [],
                   handler: @escaping (CommandInfo) -> Void)
     {
-        self.id = Snowflake()
+        self.commandID = Snowflake()
         self.name = name
         self.description = description
         self.type = type.rawValue
@@ -101,13 +104,15 @@ public struct Command: Equatable {
     
     // MARK: Methods
     public static func == (lhs: Command, rhs: Command) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.name == rhs.name
     }
 }
 
 // MARK: - Helper Types
 extension Command {
-    public struct CommandOption { // TODO: Write custom initialiser and docs for this
+    public struct CommandOption: Hashable { // TODO: Write custom initialiser and docs for this
+        private let id = UUID()
+
         let type: Int
         
         let name: String
@@ -144,7 +149,9 @@ extension Command {
 }
 
 // MARK: - CommandInfo
-public struct CommandInfo {
+public struct CommandInfo: Hashable {
+    private let id = UUID()
+
     public var channelID: Snowflake
     public var guildID: Snowflake
     public var user: User

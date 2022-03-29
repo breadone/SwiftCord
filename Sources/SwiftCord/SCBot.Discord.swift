@@ -9,12 +9,6 @@ import Starscream
 extension SCBot {
     /// Connects the bot to Discord's servers
     public func connect() {
-        // delete unused commands first
-        for cmd in self.commands {
-
-        }
-
-
         Task(priority: .high) {
             do {
                 let data = try await self.request(.gateway)
@@ -45,7 +39,32 @@ extension SCBot {
         socket.write(string: identify)
     }
 
-    public func registerCommand(_ command: Command) {
+    /// Adds your commands to the bot
+    /// Can support multiple commands at once, **should only be called once**
+    /// - Parameter commands: the commands to add
+    public func addCommands(_ commands: Command...) {
+        commands.forEach { command in  // register commands first
+            self.registerCommand(command)
+        }
+
+        self.commands.forEach { c in
+            if !commands.contains(c) {
+                self.deleteCommand(c)
+                printBotStatus(.command, message: "Deleted unused command: \(c.name)")
+            }
+        }
+
+//        let difference = commands.difference(from: self.commands)
+//        difference.forEach { c in
+//            self.deleteCommand(c)
+//            printBotStatus(.command, message: "Deleted unused command: \(c.name)")
+//        }
+        self.commands = commands
+        self.writeCommandsFile()
+    }
+
+    /// Internal function to add commands, use addCommands() instead!
+    private func registerCommand(_ command: Command) {
         guard !self.commands.contains(command) else {
             printBotStatus(.command, message: "Skipping registering existing command: \(command.name)")
             return

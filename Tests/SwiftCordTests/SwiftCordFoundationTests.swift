@@ -20,21 +20,11 @@ final class SCFoundationTests: XCTestCase {
     func testCommandEncoding() {
         let opt = Command.CommandOption(type: 0, name: "opt", description: "optd", req: true, choices: 0)
         let cmd = Command(name: "test", description: "desc", type: .slashCommand, options: [opt]) { _ in }
-        
-        print(cmd.arrayRepresentation.encode())
-    }
-    
-    func testFileWrite() {
-        CMDFile.writeCommandsFile([
-            Command(name: "one", description: "ondesc", type: .message, handler: {_ in}).arrayRepresentation,
-            Command(name: "two", description: "twodesc", type: .slashCommand, handler: {_ in}).arrayRepresentation
-        ].encode())
-    }
-    
-    func testFileRead() {
-        let cs = CMDFile.readCommandsFile()
-        for c in cs {
-            print(c.name, c.description)
-        }
+        let cmd1 = Command(name: "test", description: "desc", type: .slashCommand, options: [opt]) { _ in }
+
+//        print([cmd1.arrayRepresentation, cmd.arrayRepresentation].encode())
+
+        print([cmd1, cmd].difference(from:[cmd1]))
+//        print(cmd.arrayRepresentation.encode())
     }
 }
