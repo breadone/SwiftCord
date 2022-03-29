@@ -28,7 +28,7 @@ final class SCBotTests: XCTestCase {
             return "HAH"
         }
 
-        bot.addCommands(ping, ping2)
+        bot.addCommands(ping)
         
         bot.connect()
 //        bot.replyToMessage(Snowflake(uint64: 715391148096618571), message: Snowflake(uint64: 939483073488236554), message: "You Think Commands Will Work On Me.")

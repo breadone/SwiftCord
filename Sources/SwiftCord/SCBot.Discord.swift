@@ -81,12 +81,12 @@ extension SCBot {
 
 //      delete unused commands by searching thru them and comparing if they exist in the new array
         for command in self.commands {
-            if newCommands.contains(where: { $0 == command }) {
+            if !newCommands.contains(where: { $0.name == command.name }) {
                 Task {
-                    let x = try await self.request(.deleteCommand(self.appID, command.commandID))
-                    print("here, ", x)
-                    self.commands.removeAll(where: { $0 == command })
+                    self.commands.removeAll(where: { $0.name == command.name })
+                    self.writeCommandsFile()
                     botStatus(.command, message: "Deleted unused command: \(command.name)")
+                    try await self.request(.deleteCommand(self.appID, command.commandID))
                 }
             }
         }

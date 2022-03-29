@@ -76,8 +76,9 @@ extension SCBot {
             for (_, cmd) in json {
                 let name: String = cmd["name"].stringValue
                 let desc: String = cmd["description"].stringValue
+                let id: String = cmd["id"].stringValue
                 
-                cmds.append(Command(name: name, description: desc, type: .slashCommand, handler: {_ in}))
+                cmds.append(Command(id: Snowflake(string: id), name: name, description: desc, type: .slashCommand, handler: {_ in}))
             }
 
             return cmds
