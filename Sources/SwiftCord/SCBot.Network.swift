@@ -64,7 +64,7 @@ extension SCBot {
                 break
             }
             
-            return try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as! JSONObject
+            return try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as? JSONObject ?? [:]
         } catch {
             throw error
         }

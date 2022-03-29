@@ -16,6 +16,6 @@ public enum BotMessageStatus: String {
     case saveFile = "SAV"
 }
 
-public func printBotStatus(_ status: BotMessageStatus, message: String) {
+public func botStatus(_ status: BotMessageStatus, message: String) {
     print("[\(status.rawValue)] \(message)")
 }

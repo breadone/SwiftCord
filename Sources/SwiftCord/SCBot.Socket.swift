@@ -12,7 +12,7 @@ extension SCBot: WebSocketDelegate {
     public func didReceive(event: WebSocketEvent, client: WebSocket) {
         switch event {
         case .connected:
-            printBotStatus(.genericStatus, message: "Connected...")
+            botStatus(.genericStatus, message: "Connected...")
             sema.signal()
             
         case .text(let string):
@@ -22,7 +22,7 @@ extension SCBot: WebSocketDelegate {
             gatewayResponse(of: payload)
             
         case .disconnected(let reason, let code):
-            printBotStatus(.genericStatus, message: "Disconnected \(reason), \(code)")
+            botStatus(.genericStatus, message: "Disconnected \(reason), \(code)")
         default:
             break
         }
@@ -49,11 +49,11 @@ extension SCBot: WebSocketDelegate {
             
         case 9: // Invalid session
             if (data["d"] as! Bool) {
-                printBotStatus(.genericError, message: "Session invalidated, trying to reconnect...")
+                botStatus(.genericError, message: "Session invalidated, trying to reconnect...")
                 self.socket = nil
                 self.connect()
             } else {
-                printBotStatus(.genericError, message: "Session invalidated, Socket indicated that reconnection is not possible")
+                botStatus(.genericError, message: "Session invalidated, Socket indicated that reconnection is not possible")
             }
             
         case 10: // Hello
@@ -92,7 +92,7 @@ extension SCBot: WebSocketDelegate {
         case "READY": // Ready, can decode user (among other things but dont caare)
             if let userData = data["user"] as? JSONObject {
                 self.user = User(json: userData)
-                printBotStatus(.genericStatus, message: "Ready!")
+                botStatus(.genericStatus, message: "Ready!")
             }
             
         case "INTERACTION_CREATE": // command was used
@@ -101,7 +101,7 @@ extension SCBot: WebSocketDelegate {
             let channelID: Snowflake, guildID: Snowflake
             
             guard let commandData = data["data"] as? JSONObject else {
-                printBotStatus(.genericError, message: "Could not parse command")
+                botStatus(.genericError, message: "Could not parse command")
                 return
             }
             
@@ -151,7 +151,7 @@ extension SCBot: WebSocketDelegate {
             }
             
         default:
-            printBotStatus(.event, message: "\(payload.t ?? "UNKNOWN_EVENT")")
+            botStatus(.event, message: "\(payload.t ?? "UNKNOWN_EVENT")")
         }
     }
 }

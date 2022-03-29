@@ -45,7 +45,8 @@ public struct Command: Equatable, Hashable {
     
     internal var arrayRepresentation: JSONObject {
         var cmd: JSONObject =
-        ["name": self.name,
+        ["id": self.commandID.idString,
+         "name": self.name,
          "type": self.type,
          "description": self.description,
          "default_permission": self.defaultPermission,
@@ -63,7 +64,8 @@ public struct Command: Equatable, Hashable {
     }
     
     /// Create a command object, that replies with a message immediately
-    public init(name: String,
+    public init(id: Snowflake = Snowflake(),
+                  name: String,
                   description: String,
                   type: CommandType,
                   guildID: Snowflake? = nil,
@@ -71,7 +73,7 @@ public struct Command: Equatable, Hashable {
                   options: [CommandOption] = [],
                   handler: @escaping (CommandInfo) -> String)
     {
-        self.commandID = Snowflake()
+        self.commandID = id
         self.name = name
         self.description = description
         self.type = type.rawValue
@@ -83,7 +85,8 @@ public struct Command: Equatable, Hashable {
     }
     
     /// Creates a command object that does not necessarily reply immediately with a message
-    public init(name: String,
+    public init(id: Snowflake = Snowflake(),
+                  name: String,
                   description: String,
                   type: CommandType,
                   guildID: Snowflake? = nil,
@@ -91,7 +94,7 @@ public struct Command: Equatable, Hashable {
                   options: [CommandOption] = [],
                   handler: @escaping (CommandInfo) -> Void)
     {
-        self.commandID = Snowflake()
+        self.commandID = id
         self.name = name
         self.description = description
         self.type = type.rawValue

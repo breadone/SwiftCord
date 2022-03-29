@@ -18,7 +18,7 @@ extension SCBot {
                 self.socket.delegate = self
                 socket.connect()
             } catch {
-                printBotStatus(.genericError, message: error.localizedDescription)
+                botStatus(.genericError, message: error.localizedDescription)
             }
         }
         sema.wait() // waits for WS Connection
@@ -40,7 +40,7 @@ extension SCBot {
     }
 
     /// Adds your commands to the bot
-    /// Can support multiple commands at once, **should only be called once**
+    /// Supports multiple commands at once, **should only be called once**
     /// - Parameter commands: the commands to add
     public func addCommands(_ commands: Command...) {
         commands.forEach { command in  // register commands first
@@ -50,34 +50,48 @@ extension SCBot {
         self.commands.forEach { c in
             if !commands.contains(c) {
                 self.deleteCommand(c)
-                printBotStatus(.command, message: "Deleted unused command: \(c.name)")
+                botStatus(.command, message: "Deleted unused command: \(c.name)")
             }
         }
 
-//        let difference = commands.difference(from: self.commands)
-//        difference.forEach { c in
-//            self.deleteCommand(c)
-//            printBotStatus(.command, message: "Deleted unused command: \(c.name)")
-//        }
-        self.commands = commands
-        self.writeCommandsFile()
     }
 
     /// Internal function to add commands, use addCommands() instead!
-    private func registerCommand(_ command: Command) {
-        guard !self.commands.contains(command) else {
-            printBotStatus(.command, message: "Skipping registering existing command: \(command.name)")
+    private func registerCommand(_ c: Command) {
+        guard !self.commands.contains(c) else {
+            botStatus(.command, message: "Skipping registering existing command: \(c.name)")
             return
         }
 
-        // register's command to discord
+        
         Task {
-            try await self.request(.createCommand(self.appID),
+            // register's command to discord
+            let data = try await self.request(.createCommand(self.appID),
                     headers: ["Content-Type": "application/json"],
-                    body: JSONSerialization.data(withJSONObject: command.arrayRepresentation, options: .fragmentsAllowed))
+                    body: JSONSerialization.data(withJSONObject: c.arrayRepresentation, options: .fragmentsAllowed))
+            botStatus(.command, message: "Registered command: \(c.name)")
+            let id = data["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
+            
+            
+            if c.handlerReturnsMessage {
+                let newCommand = Command(id: Snowflake(string: id),
+                                         name: c.name,
+                                         description: c.description,
+                                         type: Command.CommandType(rawValue: c.type)!,
+                                         handler: c.handlerWithMessage!) // duplicates the command with the new id
+                self.commands.append(newCommand)
+            } else {
+                let newCommand = Command(id: Snowflake(string: id),
+                                         name: c.name,
+                                         description: c.description,
+                                         type: Command.CommandType(rawValue: c.type)!,
+                                         handler: c.handler!)
+                self.commands.append(newCommand)
+            }
+            
+            self.writeCommandsFile()
         }
-
-        printBotStatus(.command, message: "Registered command: \(command.name)")
+        
     }
 
     internal func deleteCommand(_ command: Command) {

@@ -19,7 +19,7 @@ public class SCBot {
     public var options: SCOptions
     public var presence: SCPresence
     public internal(set) var commands: [Command] = []
-    
+
     public internal(set) var socket: WebSocket! = nil
     public internal(set) var heartbeatInterval: Double = 0
     internal let sema = DispatchSemaphore(value: 0)
@@ -59,9 +59,9 @@ extension SCBot {
                     try content.write(to: pathWithFilename,
                                          atomically: true,
                                          encoding: .utf8)
-                    printBotStatus(.saveFile, message: "Commands file written")
+                    botStatus(.saveFile, message: "Commands file written")
                 } catch {
-                    printBotStatus(.saveFile, message: error.localizedDescription)
+                    botStatus(.saveFile, message: error.localizedDescription)
                 }
         }
     }
