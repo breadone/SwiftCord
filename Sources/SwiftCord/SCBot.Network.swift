@@ -50,7 +50,8 @@ extension SCBot {
         }
         
         do {
-            let (data, urlresponse) = try await URLSession.shared.data(for: request)
+            let session = URLSession(configuration: .default)
+            let (data, urlresponse) = try await session.data(for: request)
             let response = urlresponse as? HTTPURLResponse
             
             switch response?.statusCode { // probably more to come idk

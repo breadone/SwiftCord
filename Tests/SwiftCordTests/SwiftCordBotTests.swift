@@ -24,11 +24,11 @@ final class SCBotTests: XCTestCase {
             return "pong"
         }
 
-        let pingUser = Command(name: "pingUser", description: "ping specified user", type: .slashCommand) { info in
-            return "You. <@\(info.user.id)>."
+        let ping2 = Command(name: "ping2", description: "please", type: .slashCommand) { _ in
+            return "HAH"
         }
 
-        bot.addCommands(ping, pingUser)
+        bot.addCommands(ping, ping2)
         
         bot.connect()
 //        bot.replyToMessage(Snowflake(uint64: 715391148096618571), message: Snowflake(uint64: 939483073488236554), message: "You Think Commands Will Work On Me.")

@@ -42,64 +42,59 @@ extension SCBot {
     /// Adds your commands to the bot
     /// Supports multiple commands at once, **should only be called once**
     /// - Parameter commands: the commands to add
-    public func addCommands(_ commands: Command...) {
-        commands.forEach { command in  // register commands first
-            self.registerCommand(command)
-        }
-
-        self.commands.forEach { c in
-            if !commands.contains(c) {
-                self.deleteCommand(c)
-                botStatus(.command, message: "Deleted unused command: \(c.name)")
+    public func addCommands(_ newCommands: Command...) {
+        for command in newCommands {
+            // check command isnt already in bot array
+            if self.commands.contains(where: { $0.name == command.name }) {
+                botStatus(.command, message: "Skipping registering existing command: \(command.name)")
+                continue
+            }
+            
+            Task {
+                let body = try JSONSerialization.data(withJSONObject: command.arrayRepresentation, options: .fragmentsAllowed)
+                // register's command to discord
+                let response = try await self.request(.createCommand(self.appID),
+                        headers: ["Content-Type": "application/json"],
+                        body: body)
+                botStatus(.command, message: "Registered command: \(command.name)")
+                
+                let id = response["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
+                if command.handlerReturnsMessage {  // replaces rng id with discord id
+                    let newCommand = Command(id: Snowflake(string: id),
+                                             name: command.name,
+                                             description: command.description,
+                                             type: Command.CommandType(rawValue: command.type)!,
+                                             handler: command.handlerWithMessage!) // duplicates the command with the new id
+                    self.commands.append(newCommand)
+                } else {
+                    let newCommand = Command(id: Snowflake(string: id),
+                                             name: command.name,
+                                             description: command.description,
+                                             type: Command.CommandType(rawValue: command.type)!,
+                                             handler: command.handler!)
+                    self.commands.append(newCommand)
+                }
+                
+                self.writeCommandsFile()
             }
         }
 
-    }
-
-    /// Internal function to add commands, use addCommands() instead!
-    private func registerCommand(_ c: Command) {
-        guard !self.commands.contains(c) else {
-            botStatus(.command, message: "Skipping registering existing command: \(c.name)")
-            return
-        }
-
-        
-        Task {
-            // register's command to discord
-            let data = try await self.request(.createCommand(self.appID),
-                    headers: ["Content-Type": "application/json"],
-                    body: JSONSerialization.data(withJSONObject: c.arrayRepresentation, options: .fragmentsAllowed))
-            botStatus(.command, message: "Registered command: \(c.name)")
-            let id = data["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
-            
-            
-            if c.handlerReturnsMessage {
-                let newCommand = Command(id: Snowflake(string: id),
-                                         name: c.name,
-                                         description: c.description,
-                                         type: Command.CommandType(rawValue: c.type)!,
-                                         handler: c.handlerWithMessage!) // duplicates the command with the new id
-                self.commands.append(newCommand)
-            } else {
-                let newCommand = Command(id: Snowflake(string: id),
-                                         name: c.name,
-                                         description: c.description,
-                                         type: Command.CommandType(rawValue: c.type)!,
-                                         handler: c.handler!)
-                self.commands.append(newCommand)
+//      delete unused commands by searching thru them and comparing if they exist in the new array
+        for command in self.commands {
+            if newCommands.contains(where: { $0 == command }) {
+                Task {
+                    let x = try await self.request(.deleteCommand(self.appID, command.commandID))
+                    print("here, ", x)
+                    self.commands.removeAll(where: { $0 == command })
+                    botStatus(.command, message: "Deleted unused command: \(command.name)")
+                }
             }
-            
-            self.writeCommandsFile()
         }
-        
+
     }
 
     internal func deleteCommand(_ command: Command) {
-        Task {
-            try await self.request(.deleteCommand(self.appID),
-                    headers: ["Content-Type": "application/json"],
-                    body: JSONSerialization.data(withJSONObject: command.arrayRepresentation, options: .fragmentsAllowed))
-        }
+        
     }
 
     public func sendMessage(_ channelID: Snowflake, message: String) {
