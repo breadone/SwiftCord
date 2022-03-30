@@ -41,7 +41,7 @@ extension SCBot {
 
     /// Adds your commands to the bot
     /// Supports multiple commands at once, **should only be called once**
-    /// - Parameter commands: the commands to add
+    /// - Parameter newCommands: the commands to add
     public func addCommands(_ newCommands: Command...) {
         for command in newCommands {
             // check command isnt already in bot array
@@ -72,7 +72,7 @@ extension SCBot {
                                              name: command.name,
                                              description: command.description,
                                              type: Command.CommandType(rawValue: command.type)!,
-                                             handler: command.handlerWithMessage!) // duplicates the command with the new id
+                                             handlerMessage: command.handlerWithMessage!) // duplicates the command with the new id
                     self.commands.append(newCommand)
                 } else {
                     let newCommand = Command(id: Snowflake(string: id),
@@ -99,10 +99,6 @@ extension SCBot {
             }
         }
 
-    }
-
-    internal func deleteCommand(_ command: Command) {
-        
     }
 
     public func sendMessage(_ channelID: Snowflake, message: String) {

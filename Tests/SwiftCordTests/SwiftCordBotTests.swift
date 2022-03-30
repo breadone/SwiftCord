@@ -23,17 +23,22 @@ final class SCBotTests: XCTestCase {
         let ping = Command(name: "ping", description: "what do you think", type: .slashCommand) { _ in
             return "pong"
         }
-
-        let ping2 = Command(name: "ping2", description: "please", type: .slashCommand) { _ in
-            return "HAH"
+        
+        let cryaboutit = Command(name: "cry", description: "Hurt The Bot.", type: .slashCommand) { _ in
+            return "https://tenor.com/view/neco-arc-gif-22980190"
         }
 
-        bot.addCommands(ping)
-        
-        bot.connect()
-//        bot.replyToMessage(Snowflake(uint64: 715391148096618571), message: Snowflake(uint64: 939483073488236554), message: "You Think Commands Will Work On Me.")
+        let viewSource = Command(name: "source", description: "View SwiftCord source code", type: .slashCommand) { _ in
+            return "https://github.com/breadone/SwiftCord"
+        }
 
-//        bot.sendMessage(Snowflake(uint64: 715391148096618571), message: "Alive.")
+        let _ = Command(name: "test", description: "test", type: .slashCommand, handlerMessage: { info in
+            let x = info.user.atUser
+            return x
+        })
+
+        bot.addCommands(ping, cryaboutit, viewSource)
+        bot.connect()
 
         try? await Task.sleep(nanoseconds: 999 * 1_000_000_000) // 999 min
     }

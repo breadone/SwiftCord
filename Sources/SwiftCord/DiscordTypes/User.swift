@@ -11,6 +11,11 @@ public struct User: Codable, Hashable {
     
     /// the user's id
     public let id: Snowflake
+
+    /// Equivalent to at-mentioning the user on discord
+    public var atUser: String {
+        "<@\(self.id.idString)>"
+    }
     
     /// the user's username
     public let username: String

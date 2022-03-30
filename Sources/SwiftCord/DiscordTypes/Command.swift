@@ -9,8 +9,9 @@ import Foundation
 
 // MARK: - Command
 public struct Command: Equatable, Hashable {
-    public var hashValue: Int {
-        Int(self.commandID.id)
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.commandID)
     }
 
     /// Command ID
@@ -71,7 +72,7 @@ public struct Command: Equatable, Hashable {
                   guildID: Snowflake? = nil,
                   enabledByDefault: Bool = true,
                   options: [CommandOption] = [],
-                  handler: @escaping (CommandInfo) -> String)
+                  handlerMessage: @escaping (CommandInfo) -> String)
     {
         self.commandID = id
         self.name = name
@@ -80,7 +81,7 @@ public struct Command: Equatable, Hashable {
         self.options = options
         self.guildID = guildID
         self.defaultPermission = enabledByDefault
-        self.handlerWithMessage = handler
+        self.handlerWithMessage = handlerMessage
         self.handlerReturnsMessage = true
     }
     
