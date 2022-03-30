@@ -107,7 +107,6 @@ extension SCBot: WebSocketDelegate {
             
             // parses the data from the interaction
             commandName = commandData["name"] as? String ?? "Unknown name"
-//            commandID = Snowflake(string: commandData["id"] as! String)
             
             interactionToken = data["token"] as? String ?? ""
             interactionID = Snowflake(string: data["id"] as! String)

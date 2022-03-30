@@ -46,6 +46,14 @@ extension SCBot {
         for command in newCommands {
             // check command isnt already in bot array
             if self.commands.contains(where: { $0.name == command.name }) {
+                let index = self.commands.firstIndex(where: { $0.name == command.name })!
+                
+                if let returnMessage = command.handlerWithMessage { // replaces default command with actual command
+                    self.commands[index].handlerWithMessage = returnMessage
+                    self.commands[index].handlerReturnsMessage = true
+                } else {
+                    self.commands[index].handler = command.handler!
+                }
                 botStatus(.command, message: "Skipping registering existing command: \(command.name)")
                 continue
             }
