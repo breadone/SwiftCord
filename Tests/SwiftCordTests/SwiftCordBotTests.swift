@@ -32,11 +32,6 @@ final class SCBotTests: XCTestCase {
             return "https://github.com/breadone/SwiftCord"
         }
 
-        let _ = Command(name: "test", description: "test", type: .slashCommand, handlerMessage: { info in
-            let x = info.user.atUser
-            return x
-        })
-
         bot.addCommands(ping, cryaboutit, viewSource)
         bot.connect()
 

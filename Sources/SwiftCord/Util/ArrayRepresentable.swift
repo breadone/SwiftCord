@@ -5,5 +5,5 @@
 import Foundation
 
 protocol ArrayRepresentable: JSONEncodable {
-    var arrayRepresentation: JSONObject { get set }
+    var arrayRepresentation: JSONObject { get }
 }

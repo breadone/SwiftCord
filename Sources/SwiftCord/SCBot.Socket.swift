@@ -122,15 +122,8 @@ extension SCBot: WebSocketDelegate {
             // search command array for matching command and execute
             for command in self.commands {
                 if command.name == commandName {
-                    let data: JSONObject
-                    
-                    if command.handlerReturnsMessage {
-                        let message = command.handlerWithMessage!(info)
-                        data = ["type": 4, "data": ["content": message, "tts": false]]
-                    } else {
-                        command.handler!(info)
-                        data = ["type": 1]
-                    }
+                    let message = command.handler(info)  // execute command handler
+                    let data: JSONObject = ["type": 4, "data": ["content": message, "tts": false]]
                     
                     Task {
                         try await self.request(.replyToInteraction(interactionID, interactionToken),

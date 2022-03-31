@@ -8,12 +8,7 @@
 import Foundation
 
 // MARK: - Command
-public struct Command: Equatable, Hashable {
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.commandID)
-    }
-
+public struct Command: Equatable, Hashable, ArrayRepresentable {
     /// Command ID
     let commandID: Snowflake
     
@@ -37,12 +32,7 @@ public struct Command: Equatable, Hashable {
     
     /// The function to execute when the command is called
     /// Return the message the bot should reply with
-    var handlerWithMessage: ((CommandInfo) -> String)? = nil
-    
-    /// The function to execute when the command is called
-    var handler: ((CommandInfo) -> Void)? = nil
-    
-    internal var handlerReturnsMessage: Bool
+    var handler: (CommandInfo) -> String
     
     internal var arrayRepresentation: JSONObject {
         var cmd: JSONObject =
@@ -68,32 +58,11 @@ public struct Command: Equatable, Hashable {
     public init(id: Snowflake = Snowflake(),
                   name: String,
                   description: String,
-                  type: CommandType,
+                  type: CommandType = .slashCommand,
                   guildID: Snowflake? = nil,
                   enabledByDefault: Bool = true,
                   options: [CommandOption] = [],
-                  handlerMessage: @escaping (CommandInfo) -> String)
-    {
-        self.commandID = id
-        self.name = name
-        self.description = description
-        self.type = type.rawValue
-        self.options = options
-        self.guildID = guildID
-        self.defaultPermission = enabledByDefault
-        self.handlerWithMessage = handlerMessage
-        self.handlerReturnsMessage = true
-    }
-    
-    /// Creates a command object that does not necessarily reply immediately with a message
-    public init(id: Snowflake = Snowflake(),
-                  name: String,
-                  description: String,
-                  type: CommandType,
-                  guildID: Snowflake? = nil,
-                  enabledByDefault: Bool = true,
-                  options: [CommandOption] = [],
-                  handler: @escaping (CommandInfo) -> Void)
+                  handler: @escaping (CommandInfo) -> String)
     {
         self.commandID = id
         self.name = name
@@ -103,12 +72,15 @@ public struct Command: Equatable, Hashable {
         self.guildID = guildID
         self.defaultPermission = enabledByDefault
         self.handler = handler
-        self.handlerReturnsMessage = false
     }
-    
+
     // MARK: Methods
     public static func == (lhs: Command, rhs: Command) -> Bool {
         return lhs.name == rhs.name
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.commandID)
     }
 }
 

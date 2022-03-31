@@ -23,7 +23,7 @@ extension SCBot {
         }
         sema.wait() // waits for WS Connection
 
-        // send Identify Payload
+        // send Idvarify Payload
         let data: JSONObject = [
             "token": botToken,
             "properties": [
@@ -47,13 +47,8 @@ extension SCBot {
             // check command isnt already in bot array
             if self.commands.contains(where: { $0.name == command.name }) {
                 let index = self.commands.firstIndex(where: { $0.name == command.name })!
-                
-                if let returnMessage = command.handlerWithMessage { // replaces default command with actual command
-                    self.commands[index].handlerWithMessage = returnMessage
-                    self.commands[index].handlerReturnsMessage = true
-                } else {
-                    self.commands[index].handler = command.handler!
-                }
+
+                self.commands[index].handler = command.handler // replaces default command with actual command
                 botStatus(.command, message: "Skipping registering existing command: \(command.name)")
                 continue
             }
@@ -67,21 +62,13 @@ extension SCBot {
                 botStatus(.command, message: "Registered command: \(command.name)")
                 
                 let id = response["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
-                if command.handlerReturnsMessage {  // replaces rng id with discord id
-                    let newCommand = Command(id: Snowflake(string: id),
-                                             name: command.name,
-                                             description: command.description,
-                                             type: Command.CommandType(rawValue: command.type)!,
-                                             handlerMessage: command.handlerWithMessage!) // duplicates the command with the new id
-                    self.commands.append(newCommand)
-                } else {
-                    let newCommand = Command(id: Snowflake(string: id),
-                                             name: command.name,
-                                             description: command.description,
-                                             type: Command.CommandType(rawValue: command.type)!,
-                                             handler: command.handler!)
-                    self.commands.append(newCommand)
-                }
+                let newCommand = Command(id: Snowflake(string: id),
+                        name: command.name,
+                        description: command.description,
+                        type: Command.CommandType(rawValue: command.type)!,
+                        handler: command.handler) // replaces the empty handler from file with the actual handler
+
+                self.commands.append(newCommand)
                 
                 self.writeCommandsFile()
             }

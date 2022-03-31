@@ -18,8 +18,7 @@ final class SCFoundationTests: XCTestCase {
     }
     
     func testCommandEncoding() {
-        let opt = Command.CommandOption(type: 0, name: "opt", description: "optd", req: true, choices: 0)
-        let cmd = Command(name: "test", description: "desc", type: .slashCommand ) { _ in }
+        let cmd = Command(name: "test", description: "desc", type: .slashCommand ) { _ in "" }
         
         print(String(data: try! JSONSerialization.data(withJSONObject: cmd.arrayRepresentation), encoding: .utf8)!)
         

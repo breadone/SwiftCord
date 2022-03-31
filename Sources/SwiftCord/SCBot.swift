@@ -72,18 +72,20 @@ extension SCBot {
         if let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             let fileContent = try? String(contentsOf: path.appendingPathComponent("SCCommands.json"))
             let json = JSON(parseJSON: fileContent ?? "{}")
-            
+
             for (_, cmd) in json {
                 let name: String = cmd["name"].stringValue
                 let desc: String = cmd["description"].stringValue
                 let id: String = cmd["id"].stringValue
-                
-                cmds.append(Command(id: Snowflake(string: id), name: name, description: desc, type: .slashCommand, handler: {_ in}))
-            }
 
-            return cmds
-        } else {
-            return cmds
+                cmds.append(Command(id: Snowflake(string: id),
+                                    name: name,
+                                    description: desc,
+                                    type: .slashCommand,
+                                    handler: { _ in "" }))
+            }
         }
+
+        return cmds
     }
 }
