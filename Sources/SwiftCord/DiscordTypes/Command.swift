@@ -78,17 +78,17 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
     public static func == (lhs: Command, rhs: Command) -> Bool {
         return lhs.name == rhs.name
     }
-
+    
+    // Hashable conformance
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.commandID)
     }
 }
 
 // MARK: - Helper Types
+public typealias CommandOption = Command.CommandOption
 extension Command {
-    public struct CommandOption: Hashable { // TODO: Write custom initialiser and docs for this
-        private let id = UUID()
-
+    public struct CommandOption { // TODO: Write custom initialiser and docs for this
         let type: Int
         
         let name: String
@@ -97,10 +97,29 @@ extension Command {
         
         let req: Bool
         
-        let choices: Int
+        let choices: [(name: String, value: String)]
+
+        public init(_ type: CommandOptionType,
+                    name: String,
+                    description: String,
+                    required: Bool = false,
+                    choices: (name: String, value: String)...) {
+            self.type = type.rawValue
+            self.name = name
+            self.description = description
+            self.req = required
+            self.choices = choices
+            
+        }
         
-        var arrayRepresentation: JSONObject {
-            ["name": name, "description": description, "type": type, "required": req]
+        internal var arrayRepresentation: JSONObject {
+            var data: JSONObject = ["name": name, "description": description, "type": type, "required": req, "choices": ""]
+            var choice = [JSONObject]()
+            for c in choices {
+                choice.append(["name": c.name, "value": c.value])
+            }
+            data["choices"] = choice
+            return data
         }
     }
     

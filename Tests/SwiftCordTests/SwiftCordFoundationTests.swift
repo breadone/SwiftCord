@@ -8,7 +8,7 @@ final class SCFoundationTests: XCTestCase {
         let packet = Payload(opcode: .dispatch, data: ["Hello": 4, "hmm": ["test": 5]])
         let data = packet.encode()
         print(data)
-//        XCTAssertEqual(data, "{\"op\":0,\"d\":{\"Hello\":4}}")
+        //        XCTAssertEqual(data, "{\"op\":0,\"d\":{\"Hello\":4}}")
     }
     
     func testPayloadDecoding() {
@@ -18,7 +18,14 @@ final class SCFoundationTests: XCTestCase {
     }
     
     func testCommandEncoding() {
-        let cmd = Command(name: "test", description: "desc", type: .slashCommand ) { _ in "" }
+        let cmdOpts = CommandOption(.string,
+                                    name: "why",
+                                    description: "bruh",
+                                    choices: (name: "WHY", value: "BRUHHH"), (name: "are you serious", value: "hm"))
+        
+        let cmd = Command(name: "test", description: "desc", options: [cmdOpts]) { info in
+            return info.user.atUser
+        }
         
         print(String(data: try! JSONSerialization.data(withJSONObject: cmd.arrayRepresentation), encoding: .utf8)!)
         
