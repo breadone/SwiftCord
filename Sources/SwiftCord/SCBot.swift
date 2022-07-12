@@ -52,7 +52,7 @@ extension SCBot {
         }
 
         let content = cmds.encode()
-
+        
         if let dcDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             let pathWithFilename = dcDirectory.appendingPathComponent("SCCommands.json")
                 do {

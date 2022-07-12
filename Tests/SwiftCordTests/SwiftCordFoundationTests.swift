@@ -18,16 +18,50 @@ final class SCFoundationTests: XCTestCase {
     }
     
     func testCommandEncoding() {
-        let cmdOpts = CommandOption(.string,
-                                    name: "why",
-                                    description: "bruh",
-                                    choices: (name: "WHY", value: "BRUHHH"), (name: "are you serious", value: "hm"))
+//        let cmdOpts = CommandOption(.string,
+//                                    name: "why",
+//                                    description: "bruh",
+//                                    choices: (name: "WHY", value: "BRUHHH"), (name: "are you serious", value: "hm"))
+//
+//        let cmd = Command(name: "test", description: "desc", options: [cmdOpts]) { info in
+//            return info.user.atUser
+//        }
         
-        let cmd = Command(name: "test", description: "desc", options: [cmdOpts]) { info in
-            return info.user.atUser
-        }
+        let cmd = Command(name: "ping", description: "fuck you", handler: { $0.user.username })
         
         print(String(data: try! JSONSerialization.data(withJSONObject: cmd.arrayRepresentation), encoding: .utf8)!)
         
+    }
+    
+    func testTest() {
+        let ping = Command(name: "ping", description: "what do you think", type: .slashCommand) { _ in
+            return "pong"
+        }
+        
+        let cryaboutit = Command(name: "cry", description: "Hurt The Bot.", type: .slashCommand) { _ in
+            return "https://tenor.com/view/neco-arc-gif-22980190"
+        }
+
+        let viewSource = Command(name: "source", description: "View SwiftCord source code", type: .slashCommand) { _ in
+            return "https://github.com/breadone/SwiftCord"
+        }
+        
+        let opts = CommandOption(.user, name: "User",
+                                 description: "idk",
+                                 required: true,
+                                 choices: (name: "breadone", value: "breadone"), (name: "dfk", value: "dfk"))
+        
+        let pingThem = Command(name: "you", description: "Ping the user", options: [opts]) { info in
+            return info.user.atUser
+        }
+        
+        let commands = [ping, cryaboutit, viewSource, pingThem]
+        var cmds = [JSONObject]()
+        commands.forEach { command in
+            cmds.append(command.arrayRepresentation)
+        }
+
+        let content = cmds.encode()
+        print(content)
     }
 }

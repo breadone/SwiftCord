@@ -99,7 +99,6 @@ extension SCBot: WebSocketDelegate {
             let commandName: String //, commandID: Snowflake
             let interactionToken: String, interactionID: Snowflake
             let channelID: Snowflake, guildID: Snowflake
-            
             guard let commandData = data["data"] as? JSONObject else {
                 botStatus(.genericError, message: "Could not parse command")
                 return

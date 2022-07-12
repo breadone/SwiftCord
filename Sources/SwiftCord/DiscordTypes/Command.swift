@@ -89,14 +89,19 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
 public typealias CommandOption = Command.CommandOption
 extension Command {
     public struct CommandOption { // TODO: Write custom initialiser and docs for this
+        /// The datatype of choices to use
         let type: Int
         
+        /// The name of the Option
         let name: String
         
+        /// Description of the Option
         let description: String
         
+        /// If the option is required
         let req: Bool
         
+        /// The command option's choices
         let choices: [(name: String, value: String)]
 
         public init(_ type: CommandOptionType,
