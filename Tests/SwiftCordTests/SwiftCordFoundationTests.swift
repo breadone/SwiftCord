@@ -18,18 +18,16 @@ final class SCFoundationTests: XCTestCase {
     }
     
     func testCommandEncoding() {
-//        let cmdOpts = CommandOption(.string,
-//                                    name: "why",
-//                                    description: "bruh",
-//                                    choices: (name: "WHY", value: "BRUHHH"), (name: "are you serious", value: "hm"))
-//
-//        let cmd = Command(name: "test", description: "desc", options: [cmdOpts]) { info in
-//            return info.user.atUser
-//        }
+        let opts = CommandOption(.user, name: "user",
+                                 description: "idk",
+                                 required: true,
+                                 choices: (name: "breadone", value: "breadone"), (name: "dfk", value: "dfk"))
+
+        let pingThem = Command(name: "hello", description: "Ping the user", options: [opts]) { info in
+            return info.user.atUser
+        }
         
-        let cmd = Command(name: "ping", description: "fuck you", handler: { $0.user.username })
-        
-        print(String(data: try! JSONSerialization.data(withJSONObject: cmd.arrayRepresentation), encoding: .utf8)!)
+        print(String(data: try! JSONSerialization.data(withJSONObject: pingThem.arrayRepresentation, options: .fragmentsAllowed), encoding: .utf8)!)
         
     }
     

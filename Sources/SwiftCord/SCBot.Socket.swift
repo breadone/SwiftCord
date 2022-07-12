@@ -96,9 +96,10 @@ extension SCBot: WebSocketDelegate {
             }
             
         case "INTERACTION_CREATE": // command was used
-            let commandName: String //, commandID: Snowflake
+            let commandName: String
             let interactionToken: String, interactionID: Snowflake
             let channelID: Snowflake, guildID: Snowflake
+            
             guard let commandData = data["data"] as? JSONObject else {
                 botStatus(.genericError, message: "Could not parse command")
                 return
@@ -116,7 +117,17 @@ extension SCBot: WebSocketDelegate {
             let memberData = data["member"] as! JSONObject
             let user = User(json: memberData["user"] as! JSONObject)
             
-            let info = CommandInfo(channelID: channelID, guildID: guildID, user: user)
+            let optionData = commandData["options"] as? [JSONObject] ?? [[:]]
+            
+            var opts = [(String, String)]()
+            
+            for opt in optionData {
+                opts.append((opt["name"] as! String, opt["value"] as! String))
+            }
+            
+            let info = CommandInfo(channelID: channelID, guildID: guildID, user: user, options: opts)
+            
+            
             
             // search command array for matching command and execute
             for command in self.commands {
@@ -129,15 +140,18 @@ extension SCBot: WebSocketDelegate {
                                                headers: ["Content-Type": "application/json"],
                                                body: JSONSerialization.data(withJSONObject: data, options: .fragmentsAllowed))
                     }
+                    
+                    botStatus(.command, message: "Command `\(command.name)` run, replied `\(message)`")
                     return
                 }
             }
             
             print("[WRN] Unhandled Command! '\(commandName)'")
             Task {
+                let content: JSONObject = ["type": 4, "data": ["content": "Command not found", "tts": false]]
                 try await self.request(.replyToInteraction(interactionID, interactionToken),
                                        headers: ["Content-Type": "application/json"],
-                                       body: JSONSerialization.data(withJSONObject: ["type": 4, "data": ["content": "Command not found", "tts": false]],
+                                       body: JSONSerialization.data(withJSONObject: content,
                                                                     options: .fragmentsAllowed))
             }
             

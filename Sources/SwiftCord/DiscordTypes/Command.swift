@@ -36,11 +36,9 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
     
     internal var arrayRepresentation: JSONObject {
         var cmd: JSONObject =
-        ["id": self.commandID.idString,
-         "name": self.name,
+        ["name": self.name,
          "type": self.type,
          "description": self.description,
-         "default_permission": self.defaultPermission,
          "options": []]
         
         if !options.isEmpty {
@@ -76,7 +74,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
 
     // MARK: Methods
     public static func == (lhs: Command, rhs: Command) -> Bool {
-        return lhs.name == rhs.name
+        return (lhs.name == rhs.name && lhs.options == rhs.options)
     }
     
     // Hashable conformance
@@ -88,7 +86,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
 // MARK: - Helper Types
 public typealias CommandOption = Command.CommandOption
 extension Command {
-    public struct CommandOption { // TODO: Write custom initialiser and docs for this
+    public struct CommandOption: Equatable { // TODO: Write custom initialiser and docs for this
         /// The datatype of choices to use
         let type: Int
         
@@ -126,6 +124,10 @@ extension Command {
             data["choices"] = choice
             return data
         }
+        
+        public static func == (lhs: CommandOption, rhs: CommandOption) -> Bool {
+            return lhs.name == rhs.name && lhs.description == rhs.description
+        }
     }
     
     public enum CommandType: Int {
@@ -155,5 +157,14 @@ public struct CommandInfo: Hashable {
     public var channelID: Snowflake
     public var guildID: Snowflake
     public var user: User
+    public var options: [(name: String, value: String)]
     
+    public static func == (lhs: CommandInfo, rhs: CommandInfo) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        let _ = hasher.finalize()
+    }
 }

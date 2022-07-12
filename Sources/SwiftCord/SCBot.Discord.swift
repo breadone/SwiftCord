@@ -54,7 +54,7 @@ extension SCBot {
             }
             
             Task {
-                let body = try JSONSerialization.data(withJSONObject: command.arrayRepresentation, options: .fragmentsAllowed)
+                let body = try JSONSerialization.data(withJSONObject: command.arrayRepresentation)
                 // register's command to discord
                 let response = try await self.request(.createCommand(self.appID),
                         headers: ["Content-Type": "application/json"],
