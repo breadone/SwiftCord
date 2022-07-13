@@ -7,15 +7,23 @@
 
 import Foundation
 
-public enum BotMessageStatus: String {
-    case genericStatus = "BOT"
-    case genericError = "ERR"
-    case event = "EVT"
-    case websocket = "WEB"
-    case command = "CMD"
-    case saveFile = "SAV"
-}
-
-public func botStatus(_ status: BotMessageStatus, message: String) {
-    print("[\(status.rawValue)] \(message)")
+extension SCBot {
+    public enum BotMessageStatus: String {
+        case genericStatus = "BOT"
+        case warning = "WRN"
+        case genericError = "ERR"
+        case event = "EVT"
+        case websocket = "WEB"
+        case command = "CMD"
+        case saveFile = "SAV"
+    }
+    
+    public func botStatus(_ status: BotMessageStatus, message: String) {
+        if status == .warning && self.options.displayWarningMessages {
+            print("[\(status.rawValue)] \(message)")
+        } else {
+            print("[\(status.rawValue)] \(message)")
+        }
+        
+    }
 }

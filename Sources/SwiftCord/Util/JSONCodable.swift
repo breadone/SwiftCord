@@ -41,3 +41,12 @@ extension JSONEncodable {
     }
 }
 
+extension JSONObject {
+    public func data() throws -> Data {
+        do {
+            return try JSONSerialization.data(withJSONObject: self, options: .fragmentsAllowed)
+        } catch {
+            throw error
+        }
+    }
+}

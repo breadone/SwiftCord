@@ -133,26 +133,28 @@ extension SCBot: WebSocketDelegate {
             for command in self.commands {
                 if command.name == commandName {
                     let message = command.handler(info)  // execute command handler
-                    let data: JSONObject = ["type": 4, "data": ["content": message, "tts": false]]
+                    let content: JSONObject = ["type": 4, "data": ["content": message, "tts": false]]
                     
                     Task {
                         try await self.request(.replyToInteraction(interactionID, interactionToken),
                                                headers: ["Content-Type": "application/json"],
-                                               body: JSONSerialization.data(withJSONObject: data, options: .fragmentsAllowed))
+                                               body: content.data())
                     }
                     
-                    botStatus(.command, message: "Command `\(command.name)` run, replied `\(message)`")
+                    if self.options.displayCommandMessages {
+                        botStatus(.command, message: "Command `\(command.name)` run, replied `\(message)`")
+                    }
                     return
                 }
             }
             
-            print("[WRN] Unhandled Command! '\(commandName)'")
+            botStatus(.warning, message: "Unhandled Command! '\(commandName)'")
             Task {
                 let content: JSONObject = ["type": 4, "data": ["content": "Command not found", "tts": false]]
+                
                 try await self.request(.replyToInteraction(interactionID, interactionToken),
                                        headers: ["Content-Type": "application/json"],
-                                       body: JSONSerialization.data(withJSONObject: content,
-                                                                    options: .fragmentsAllowed))
+                                       body: content.data())
             }
             
         default:

@@ -41,6 +41,7 @@ extension SCBot {
 
     /// Adds your commands to the bot
     /// Supports multiple commands at once, **should only be called once**
+    /// Eg. `bot.addCommands(command1, command2, command3)`
     /// - Parameter newCommands: the commands to add
     public func addCommands(_ newCommands: Command...) {
         for command in newCommands {
@@ -54,7 +55,7 @@ extension SCBot {
             }
             
             Task {
-                let body = try JSONSerialization.data(withJSONObject: command.arrayRepresentation)
+                let body = try command.arrayRepresentation.data()
                 // register's command to discord
                 let response = try await self.request(.createCommand(self.appID),
                         headers: ["Content-Type": "application/json"],
@@ -88,13 +89,13 @@ extension SCBot {
 
     }
 
-    public func sendMessage(_ channelID: Snowflake, message: String) {
+    public func sendMessage(to channelID: Snowflake, message: String) {
         let content: JSONObject = ["content": message, "tts": false]
 
         Task {
             try await self.request(.createMessage(channelID),
-                    headers: ["Content-Type": "application/json"],
-                    body: JSONSerialization.data(withJSONObject: content, options: .fragmentsAllowed))
+                                   headers: ["Content-Type": "application/json"],
+                                   body: content.data())
         }
     }
 
@@ -105,8 +106,8 @@ extension SCBot {
 
         Task {
             try await self.request(.createMessage(channelID),
-                    headers: ["Content-Type": "application/json"],
-                    body: JSONSerialization.data(withJSONObject: content, options: .fragmentsAllowed))
+                                   headers: ["Content-Type": "application/json"],
+                                   body: content.data())
         }
     }
 }

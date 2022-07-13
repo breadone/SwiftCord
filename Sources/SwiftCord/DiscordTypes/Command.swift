@@ -63,7 +63,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
                   handler: @escaping (CommandInfo) -> String)
     {
         self.commandID = id
-        self.name = name
+        self.name = name.lowercased()
         self.description = description
         self.type = type.rawValue
         self.options = options
@@ -108,7 +108,7 @@ extension Command {
                     required: Bool = false,
                     choices: (name: String, value: String)...) {
             self.type = type.rawValue
-            self.name = name
+            self.name = name.lowercased()
             self.description = description
             self.req = required
             self.choices = choices
