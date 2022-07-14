@@ -14,7 +14,13 @@ extension SCBot {
                 let data = try await self.request(.gateway)
                 var urlString = data["url"] as! String
                 urlString += "/?v=\(options.discordApiVersion)&encoding=json"
-                self.socket = WebSocket(request: URLRequest(url: URL(string: urlString)!))
+                
+                guard let url = URL(string: urlString) else {
+                    botStatus(.genericError, message: "Failed to connect! The URL is not correct (SCBot+Discord.swift)")
+                    return
+                }
+                
+                self.socket = WebSocket(request: URLRequest(url: url))
                 self.socket.delegate = self
                 socket.connect()
             } catch {
@@ -23,7 +29,7 @@ extension SCBot {
         }
         sema.wait() // waits for WS Connection
 
-        // send Idvarify Payload
+        // send Identify Payload
         let data: JSONObject = [
             "token": botToken,
             "properties": [
@@ -42,8 +48,9 @@ extension SCBot {
     /// Adds your commands to the bot
     /// Supports multiple commands at once, **should only be called once**
     /// Eg. `bot.addCommands(command1, command2, command3)`
+    /// - Parameter guild: Optional, the ID of the guild to add if it's a guild command
     /// - Parameter newCommands: the commands to add
-    public func addCommands(_ newCommands: Command...) {
+    public func addCommands(to guild: Int? = nil, _ newCommands: Command...) {
         for command in newCommands {
             // check command isnt already in bot array
             if self.commands.contains(where: { $0.name == command.name }) {
@@ -56,10 +63,19 @@ extension SCBot {
             
             Task {
                 let body = try command.arrayRepresentation.data()
+                
                 // register's command to discord
-                let response = try await self.request(.createCommand(self.appID),
-                        headers: ["Content-Type": "application/json"],
-                        body: body)
+                let response: JSONObject
+                if let guild = guild { // if its a guild command then use that endpoint instead
+                    response = try await self.request(.createGuildCommand(self.appID, guild),
+                            headers: ["Content-Type": "application/json"],
+                            body: body)
+                } else {
+                    response = try await self.request(.createCommand(self.appID),
+                            headers: ["Content-Type": "application/json"],
+                            body: body)
+                }
+                
                 botStatus(.command, message: "Registered command: \(command.name)")
                 
                 let id = response["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
@@ -81,7 +97,7 @@ extension SCBot {
                 Task {
                     self.commands.removeAll(where: { $0.name == command.name })
                     self.writeCommandsFile()
-                    botStatus(.command, message: "Deleted unused command: \(command.name)")
+                    botStatus(.command, message: "Deleting unused command: \(command.name)")
                     try await self.request(.deleteCommand(self.appID, command.commandID))
                 }
             }

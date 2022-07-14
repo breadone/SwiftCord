@@ -126,6 +126,15 @@ extension Command {
         }
         
         public static func == (lhs: CommandOption, rhs: CommandOption) -> Bool {
+            if lhs.choices.count != rhs.choices.count { return false }
+            
+            // makes sure the choices match 
+            for i in 0 ..< lhs.choices.count {
+                if lhs.choices[i].name != rhs.choices[i].name || lhs.choices[i].value != rhs.choices[i].value {
+                    return false
+                }
+            }
+            
             return lhs.name == rhs.name && lhs.description == rhs.description
         }
     }
