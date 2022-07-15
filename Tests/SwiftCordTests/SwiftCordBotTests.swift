@@ -10,23 +10,15 @@ fileprivate func getToken() -> String {
     do {
         return try String(contentsOfFile: "\(NSHomeDirectory())/Code/Swift/SwiftCord/Tests/SwiftCordTests/token.txt")
     } catch {
-        print(error.localizedDescription)
-        return "oops"
+        fatalError(error.localizedDescription)
     }
 }
+
 
 final class SCBotTests: XCTestCase {
     func testBot() async {
         let bot = SCBot(token: getToken(), appId: 715096508801875990, intents: 1 << 16)
         bot.presence = SCPresence(status: .idle, activity: "And Waiting.", activityType: .watching)
-        
-        let ping = Command(name: "ping", description: "what do you think", type: .slashCommand) { _ in
-            return "pong"
-        }
-        
-        //        let cryaboutit = Command(name: "cry", description: "Hurt The Bot.", type: .slashCommand) { _ in
-        //            return "https://tenor.com/view/neco-arc-gif-22980190"
-        //        }
         
         let viewSource = Command(name: "source", description: "View SwiftCord source code", type: .slashCommand) { _ in
             return "https://github.com/breadone/SwiftCord"
@@ -35,26 +27,36 @@ final class SCBotTests: XCTestCase {
         let opts = CommandOption(.string, name: "user",
                                  description: "idk",
                                  required: true,
-                                 choices: (name: "breadone", value: "<@439618772337295361>"),
-                                          (name: "dfk", value: "<@295795976265007105>"),
-                                          (name: "breauxmoment", value: "<@707016264429731870>"))
+                                 choices: [(label: "breadone", value: "<@439618772337295361>"),
+                                          (label: "dfk", value: "<@295795976265007105>"),
+                                          (label: "breauxmoment", value: "<@707016264429731870>"),
+                                          (label: "aquaduct", value: "<@500453737677193226>")])
         
         let pingThem = Command(name: "hello", description: "Ping the user", options: [opts]) { info in
-            switch info.options[0].name {
-            case "dfk":
+            switch info.options[0].value {
+            case "<@295795976265007105>":
                 return "Buy Star Citizen \(info.options[0].value)"
-            case "breadone":
+                
+            case "<@439618772337295361>":
                 return "Hello \(info.options[0].value)"
-            case "breauxmoment":
+                
+            case "<@707016264429731870>":
                 return "Who the frick are you, \(info.options[0].value)"
+                
+            case "<@500453737677193226>":
+                return "aqua duck"
+                
             default:
                 return "no literally who are you"
             }
         }
         
-        bot.addCommands(to: 715391148096618568, pingThem, ping, viewSource)
+        bot.addCommands(to: 715391148096618568, pingThem, viewSource)
         
         bot.connect()
+        
+        let e = Embed(title: "eName", text: "aaaaa")
+        bot.sendMessage(to: 715391148096618571, message: e)
         
         //        bot.sendMessage(Snowflake(string: "715391148096618571"), message: "bot swana")
         try? await Task.sleep(nanoseconds: 999 * 1_000_000_000) // 999 sec

@@ -53,8 +53,8 @@ extension SCBot {
     public func addCommands(to guild: Int? = nil, _ newCommands: Command...) {
         for command in newCommands {
             // check command isnt already in bot array
-            if self.commands.contains(where: { $0.name == command.name }) {
-                let index = self.commands.firstIndex(where: { $0.name == command.name })!
+            if self.commands.contains(where: { $0 == command }) {
+                let index = self.commands.firstIndex(where: { $0 == command })!
 
                 self.commands[index].handler = command.handler // replaces default command with actual command
                 botStatus(.command, message: "Skipping registering existing command: \(command.name)")
@@ -66,7 +66,9 @@ extension SCBot {
                 
                 // register's command to discord
                 let response: JSONObject
-                if let guild = guild { // if its a guild command then use that endpoint instead
+                
+                // if its a guild command then use that endpoint instead
+                if let guild = guild {
                     response = try await self.request(.createGuildCommand(self.appID, guild),
                             headers: ["Content-Type": "application/json"],
                             body: body)
@@ -93,9 +95,9 @@ extension SCBot {
 
 //      delete unused commands by searching thru them and comparing if they exist in the new array
         for command in self.commands {
-            if !newCommands.contains(where: { $0.name == command.name }) {
+            if !newCommands.contains(where: { $0 == command }) {
                 Task {
-                    self.commands.removeAll(where: { $0.name == command.name })
+                    self.commands.removeAll(where: { $0 == command })
                     self.writeCommandsFile()
                     botStatus(.command, message: "Deleting unused command: \(command.name)")
                     try await self.request(.deleteCommand(self.appID, command.commandID))
@@ -105,13 +107,25 @@ extension SCBot {
 
     }
 
-    public func sendMessage(to channelID: Snowflake, message: String) {
-        let content: JSONObject = ["content": message, "tts": false]
+    public func sendMessage(to channelID: Int, message: String, tts: Bool = false) {
+        let content: JSONObject = ["content": message, "tts": tts]
 
         Task {
-            try await self.request(.createMessage(channelID),
+            try await self.request(.createMessage(Snowflake(uint64: UInt64(channelID))),
                                    headers: ["Content-Type": "application/json"],
                                    body: content.data())
+        }
+    }
+    
+    
+    public func sendMessage(to channelID: Int, message: Embed, tts: Bool = false) {
+        let content: JSONObject = ["embeds": [message.arrayRepresentation], "tts": tts]
+        
+        Task {
+            try await self.request(.createMessage(Snowflake(uint64: UInt64(channelID))),
+                                   headers: ["Content-Type": "application/json"],
+                                   body: content.data()
+            )
         }
     }
 

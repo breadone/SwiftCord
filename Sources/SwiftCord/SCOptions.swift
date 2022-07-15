@@ -18,4 +18,7 @@ public struct SCOptions {
     
     /// Whether to show [WRN] messages
     public var displayWarningMessages: Bool = true
+    
+    /// Whether to show currently unsupported events that are recieved through the websocket
+    public var displayEvents: Bool = false
 }

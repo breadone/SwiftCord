@@ -21,7 +21,7 @@ final class SCFoundationTests: XCTestCase {
         let opts = CommandOption(.user, name: "user",
                                  description: "idk",
                                  required: true,
-                                 choices: (name: "breadone", value: "breadone"), (name: "dfk", value: "dfk"))
+                                 choices: [(label: "breadone", value: "breadone"), (label: "dfk", value: "dfk")])
 
         let pingThem = Command(name: "hello", description: "Ping the user", options: [opts]) { info in
             return info.user.atUser
@@ -31,35 +31,10 @@ final class SCFoundationTests: XCTestCase {
         
     }
     
-    func testTest() {
-        let ping = Command(name: "ping", description: "what do you think", type: .slashCommand) { _ in
-            return "pong"
-        }
+    func testEmbedEncoding() {
+        var e = Embed(title: "funny moment", text: "aaaaaaa")
+        e.addField(title: "field1", text: "field2")
         
-        let cryaboutit = Command(name: "cry", description: "Hurt The Bot.", type: .slashCommand) { _ in
-            return "https://tenor.com/view/neco-arc-gif-22980190"
-        }
-
-        let viewSource = Command(name: "source", description: "View SwiftCord source code", type: .slashCommand) { _ in
-            return "https://github.com/breadone/SwiftCord"
-        }
-        
-        let opts = CommandOption(.user, name: "User",
-                                 description: "idk",
-                                 required: true,
-                                 choices: (name: "breadone", value: "breadone"), (name: "dfk", value: "dfk"))
-        
-        let pingThem = Command(name: "you", description: "Ping the user", options: [opts]) { info in
-            return info.user.atUser
-        }
-        
-        let commands = [ping, cryaboutit, viewSource, pingThem]
-        var cmds = [JSONObject]()
-        commands.forEach { command in
-            cmds.append(command.arrayRepresentation)
-        }
-
-        let content = cmds.encode()
-        print(content)
+        print(["embeds": [e.arrayRepresentation], "tts": false].encode())
     }
 }

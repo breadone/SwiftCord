@@ -85,6 +85,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
 
 // MARK: - Helper Types
 public typealias CommandOption = Command.CommandOption
+
 extension Command {
     public struct CommandOption: Equatable { // TODO: Write custom initialiser and docs for this
         /// The datatype of choices to use
@@ -100,26 +101,25 @@ extension Command {
         let req: Bool
         
         /// The command option's choices
-        let choices: [(name: String, value: String)]
+        let choices: [(label: String, value: String)]
 
         public init(_ type: CommandOptionType,
                     name: String,
                     description: String,
                     required: Bool = false,
-                    choices: (name: String, value: String)...) {
+                    choices: [(label: String, value: String)] = []) {
             self.type = type.rawValue
             self.name = name.lowercased()
             self.description = description
             self.req = required
-            self.choices = choices
-            
+            self.choices = choices    
         }
         
         internal var arrayRepresentation: JSONObject {
             var data: JSONObject = ["name": name, "description": description, "type": type, "required": req, "choices": ""]
             var choice = [JSONObject]()
             for c in choices {
-                choice.append(["name": c.name, "value": c.value])
+                choice.append(["name": c.label, "value": c.value])
             }
             data["choices"] = choice
             return data
@@ -130,7 +130,7 @@ extension Command {
             
             // makes sure the choices match 
             for i in 0 ..< lhs.choices.count {
-                if lhs.choices[i].name != rhs.choices[i].name || lhs.choices[i].value != rhs.choices[i].value {
+                if lhs.choices[i].label != rhs.choices[i].label || lhs.choices[i].value != rhs.choices[i].value {
                     return false
                 }
             }
@@ -166,7 +166,7 @@ public struct CommandInfo: Hashable {
     public var channelID: Snowflake
     public var guildID: Snowflake
     public var user: User
-    public var options: [(name: String, value: String)]
+    public var options: [(label: String, value: String)]
     
     public static func == (lhs: CommandInfo, rhs: CommandInfo) -> Bool {
         lhs.id == rhs.id

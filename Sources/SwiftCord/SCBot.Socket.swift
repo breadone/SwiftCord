@@ -122,12 +122,10 @@ extension SCBot: WebSocketDelegate {
             var opts = [(String, String)]()
             
             for opt in optionData {
-                opts.append((opt["name"] as! String, opt["value"] as! String))
+                opts.append((opt["name"] as? String ?? "<>", opt["value"] as? String ?? "<>"))
             }
             
             let info = CommandInfo(channelID: channelID, guildID: guildID, user: user, options: opts)
-            
-            
             
             // search command array for matching command and execute
             for command in self.commands {
@@ -142,7 +140,7 @@ extension SCBot: WebSocketDelegate {
                     }
                     
                     if self.options.displayCommandMessages {
-                        botStatus(.command, message: "Command `\(command.name)` run, replied `\(message)`")
+                        botStatus(.command, message: "Command `\(command.name)` run, with info `\(opts), replied `\(message)`")
                     }
                     return
                 }
@@ -158,7 +156,9 @@ extension SCBot: WebSocketDelegate {
             }
             
         default:
-            botStatus(.event, message: "\(payload.t ?? "UNKNOWN_EVENT")")
+            if self.options.displayEvents {
+                botStatus(.event, message: "\(payload.t ?? "UNKNOWN_EVENT")")
+            }
         }
     }
 }
