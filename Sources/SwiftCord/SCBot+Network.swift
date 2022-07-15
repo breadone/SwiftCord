@@ -1,5 +1,5 @@
 //
-//  SCBot.Network.swift
+//  SCBot+Network.swift
 //  
 //
 //  Created by Pradyun Setti on 3/03/22.

@@ -74,7 +74,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
 
     // MARK: Methods
     public static func == (lhs: Command, rhs: Command) -> Bool {
-        return (lhs.name == rhs.name && lhs.options == rhs.options)
+        return (try? lhs.arrayRepresentation.data() == rhs.arrayRepresentation.data()) ?? false
     }
     
     // Hashable conformance

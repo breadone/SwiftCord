@@ -1,4 +1,7 @@
 //
+//  SCBot+Discord.swift
+//
+//
 // Created by Pradyun Setti on 29/03/22.
 //
 
@@ -82,10 +85,11 @@ extension SCBot {
                 
                 let id = response["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
                 let newCommand = Command(id: Snowflake(string: id),
-                        name: command.name,
-                        description: command.description,
-                        type: Command.CommandType(rawValue: command.type)!,
-                        handler: command.handler) // replaces the empty handler from file with the actual handler
+                                         name: command.name,
+                                         description: command.description,
+                                         type: Command.CommandType(rawValue: command.type)!,
+                                         guildID: Snowflake(int: guild),
+                                         handler: command.handler) // replaces the empty handler from file with the actual handler
 
                 self.commands.append(newCommand)
                 
@@ -98,24 +102,41 @@ extension SCBot {
             if !newCommands.contains(where: { $0 == command }) {
                 Task {
                     self.commands.removeAll(where: { $0 == command })
+                    
+                    if let guildID = command.guildID {
+                        botStatus(.command, message: "Deleting unused Guild command: \(command.name)")
+                        try await self.request(.deleteGuildCommand(self.appID, Int(guildID.id), command.commandID))
+                    } else {
+                        botStatus(.command, message: "Deleting unused command: \(command.name)")
+                        try await self.request(.deleteCommand(self.appID, command.commandID))
+                    }
+                    
                     self.writeCommandsFile()
-                    botStatus(.command, message: "Deleting unused command: \(command.name)")
-                    try await self.request(.deleteCommand(self.appID, command.commandID))
                 }
             }
         }
 
     }
-
-    public func sendMessage(to channelID: Int, message: String? = nil, embed: Embed? = nil, tts: Bool = false) {
+    
+    /// Sends a message to a Channel, with optional embed support.
+    /// Can have either a message or series of embeds or both, but has to have at least one of the two, otherwise it will fail to send anything.
+    /// - Parameters:
+    ///   - channelID: The ID of the channel to send messages to. Right click a channel and click 'copy ID' to get it
+    ///   - message: The string message to send
+    ///   - embeds: Array of embeds to send
+    ///   - tts: Whether to enable Text-To-Speech for all supported users on the channel
+    public func sendMessage(to channelID: Int, message: String? = nil, embeds: [Embed]? = nil, tts: Bool = false) {
         var content: JSONObject = ["tts": tts]
         
         if let message = message {
             content["content"] = message
         }
         
-        if let embed = embed {
-            content["embeds"] = [embed.arrayRepresentation]
+        if let embeds = embeds {
+            var representedArray = [JSONObject]()
+            embeds.forEach { representedArray.append($0.arrayRepresentation) }
+            
+            content["embeds"] = representedArray
         }
         
         let data = try? content.data() // xc cries when i dont have this i dont know why

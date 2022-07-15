@@ -1,5 +1,5 @@
 //
-//  SCBot.Socket.swift
+//  SCBot+Socket.swift
 //  
 //
 //  Created by Pradyun Setti on 3/03/22.

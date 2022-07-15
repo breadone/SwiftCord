@@ -28,6 +28,14 @@ public struct Snowflake: Codable, Equatable, Hashable {
         self.id = uint64
     }
     
+    public init?(int: Int?) {
+        if let int = int {
+            self.id = UInt64(int)
+        } else {
+            return nil
+        }
+    }
+    
     /// Makes a snowflake from the date of an event
     public init(date: Date) {
         self.id = UInt64(date.timeIntervalSince1970 * 1000 - DISCORD_EPOCH.timeIntervalSince1970) << 22

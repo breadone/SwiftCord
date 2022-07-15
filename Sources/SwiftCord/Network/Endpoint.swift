@@ -27,6 +27,7 @@ public enum Endpoint {
     case createCommand(Int)
     case createGuildCommand(Int, Int)
     case deleteCommand(Int, Snowflake)
+    case deleteGuildCommand(Int, Int, Snowflake)
     case replyToInteraction(Snowflake, String)
 }
 
@@ -68,6 +69,9 @@ extension Endpoint {
             
         case let .deleteCommand(appID, cmdID):
             return (.delete, "/applications/\(appID)/commands/\(cmdID.idString)")
+            
+        case let .deleteGuildCommand(appID, guildID, cmdID):
+            return (.delete, "/applications/\(appID)/guilds/\(guildID)/commands/\(cmdID.idString)")
             
         case let .replyToInteraction(interactionID, interactionToken):
             return (.post, "/interactions/\(interactionID.idString)/\(interactionToken)/callback")

@@ -9,20 +9,20 @@ extension String: Messageable {}
 
 public struct Embed: Messageable {
     // TODO: make max length of title 256 and desc 4096
-    public let title: String
+    public var title: String
 
-    public let description: String?
+    public var description: String?
 
-    public let url: String?
+    public var url: String?
 
-    public let color: Int?
+    public var color: Int?
 
-    public let image: Image?
+    public var image: Image?
     
     public var fields: [[String: String]]
     
     public init(title: String,
-                text: String,
+                text: String? = nil,
                 url: String? = nil,
                 colour: Int? = nil,
                 image: Image? = nil,
@@ -55,7 +55,7 @@ public struct Embed: Messageable {
         }
         
         if let image = image {
-            content["image"] = image
+            content["image"] = image.arrayRepresentation
         }
         
         return content
@@ -63,14 +63,23 @@ public struct Embed: Messageable {
 }
 
 // Embed substructs
-extension Embed {
-    public struct Image {
-        public let url: String
-
-        public let proxyURL: String?
-
-        public let width: Int
-
-        public let height: Int
+public struct Image {
+    public let url: String
+    
+    public let proxyURL: String?
+    
+    public let width: Int?
+    
+    public let height: Int?
+    
+    public init(_ url: String, proxyURL: String? = nil, width: Int? = nil, height: Int? = nil) {
+        self.url = url
+        self.proxyURL = proxyURL
+        self.width = width
+        self.height = height
+    }
+    
+    public var arrayRepresentation: JSONObject {
+        ["url": url]
     }
 }

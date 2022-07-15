@@ -27,7 +27,7 @@ final class SCFoundationTests: XCTestCase {
             return info.user.atUser
         }
         
-        print(String(data: try! JSONSerialization.data(withJSONObject: pingThem.arrayRepresentation, options: .fragmentsAllowed), encoding: .utf8)!)
+        print(pingThem.arrayRepresentation)
         
     }
     
@@ -36,5 +36,33 @@ final class SCFoundationTests: XCTestCase {
         e.addField(title: "field1", text: "field2")
         
         print(["embeds": [e.arrayRepresentation], "tts": false].encode())
+    }
+}
+
+final class SCFileIOTests: XCTestCase {
+    
+    func testFileRead() {
+        var cmds = [Command]()
+        
+        if let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let fileContent = try? String(contentsOf: path.appendingPathComponent("SCCommands.json"))
+            
+            print(fileContent!)
+            let json = JSON(parseJSON: fileContent ?? "{}")
+
+            for (_, cmd) in json {
+                let name: String = cmd["name"].stringValue
+                let desc: String = cmd["description"].stringValue
+                let id: String = cmd["id"].stringValue
+                let guildID: String = cmd["guild_id"].stringValue
+
+                cmds.append(Command(id: Snowflake(string: id),
+                                    name: name,
+                                    description: desc,
+                                    type: .slashCommand,
+                                    guildID: Snowflake(string: guildID),
+                                    handler: { _ in "" })) // temporary handler, will get replaced on command re-addition
+            }
+        }
     }
 }

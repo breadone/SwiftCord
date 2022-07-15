@@ -47,10 +47,16 @@ public class SCBot {
 extension SCBot {
     func writeCommandsFile() {
         var cmds = [JSONObject]()
-        commands.forEach { command in
-            cmds.append(command.arrayRepresentation)
+        self.commands.forEach { command in
+            var tmp = command.arrayRepresentation
+            // add the guild id to file so we can handle auto-deleting guild commands
+            if let g = command.guildID {
+                tmp["guild_id"] = g.idString
+            }
+            
+            cmds.append(tmp)
         }
-
+        
         let content = cmds.encode()
         
         if let dcDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
@@ -77,12 +83,14 @@ extension SCBot {
                 let name: String = cmd["name"].stringValue
                 let desc: String = cmd["description"].stringValue
                 let id: String = cmd["id"].stringValue
+                let guildID: String = cmd["guild_id"].stringValue
 
                 cmds.append(Command(id: Snowflake(string: id),
                                     name: name,
                                     description: desc,
                                     type: .slashCommand,
-                                    handler: { _ in "" }))
+                                    guildID: Snowflake(string: guildID),
+                                    handler: { _ in "" })) // temporary handler, will get replaced on command re-addition
             }
         }
 
