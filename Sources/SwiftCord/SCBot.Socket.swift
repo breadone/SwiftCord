@@ -122,7 +122,7 @@ extension SCBot: WebSocketDelegate {
             var opts = [(String, String)]()
             
             for opt in optionData {
-                opts.append((opt["name"] as? String ?? "<>", opt["value"] as? String ?? "<>"))
+                opts.append((opt["name"] as? String ?? "<>", "\(opt["value"]!)"))
             }
             
             let info = CommandInfo(channelID: channelID, guildID: guildID, user: user, options: opts)
@@ -131,7 +131,16 @@ extension SCBot: WebSocketDelegate {
             for command in self.commands {
                 if command.name == commandName {
                     let message = command.handler(info)  // execute command handler
-                    let content: JSONObject = ["type": 4, "data": ["content": message, "tts": false]]
+                    
+                    // filter response between embed and string
+                    let response: JSONObject
+                    if let text = message as? String {
+                        response = ["content": text, "tts": false]
+                    } else {
+                        response = ["embeds": [(message as! Embed).arrayRepresentation], "tts": false]
+                    }
+                    
+                    let content: JSONObject = ["type": 4, "data": response]
                     
                     Task {
                         try await self.request(.replyToInteraction(interactionID, interactionToken),

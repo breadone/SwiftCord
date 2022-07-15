@@ -4,7 +4,10 @@
 
 import Foundation
 
-public struct Embed {
+public protocol Messageable {}
+extension String: Messageable {}
+
+public struct Embed: Messageable {
     // TODO: make max length of title 256 and desc 4096
     public let title: String
 

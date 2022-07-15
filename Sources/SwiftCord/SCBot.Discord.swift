@@ -107,25 +107,23 @@ extension SCBot {
 
     }
 
-    public func sendMessage(to channelID: Int, message: String, tts: Bool = false) {
-        let content: JSONObject = ["content": message, "tts": tts]
-
-        Task {
-            try await self.request(.createMessage(Snowflake(uint64: UInt64(channelID))),
-                                   headers: ["Content-Type": "application/json"],
-                                   body: content.data())
+    public func sendMessage(to channelID: Int, message: String? = nil, embed: Embed? = nil, tts: Bool = false) {
+        var content: JSONObject = ["tts": tts]
+        
+        if let message = message {
+            content["content"] = message
         }
-    }
-    
-    
-    public func sendMessage(to channelID: Int, message: Embed, tts: Bool = false) {
-        let content: JSONObject = ["embeds": [message.arrayRepresentation], "tts": tts]
+        
+        if let embed = embed {
+            content["embeds"] = [embed.arrayRepresentation]
+        }
+        
+        let data = try? content.data() // xc cries when i dont have this i dont know why
         
         Task {
             try await self.request(.createMessage(Snowflake(uint64: UInt64(channelID))),
                                    headers: ["Content-Type": "application/json"],
-                                   body: content.data()
-            )
+                                   body: data)
         }
     }
 

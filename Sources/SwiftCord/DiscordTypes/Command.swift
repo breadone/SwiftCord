@@ -32,7 +32,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
     
     /// The function to execute when the command is called
     /// Return the message the bot should reply with
-    var handler: (CommandInfo) -> String
+    var handler: (CommandInfo) -> Messageable
     
     internal var arrayRepresentation: JSONObject {
         var cmd: JSONObject =
@@ -60,7 +60,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
                   guildID: Snowflake? = nil,
                   enabledByDefault: Bool = true,
                   options: [CommandOption] = [],
-                  handler: @escaping (CommandInfo) -> String)
+                  handler: @escaping (CommandInfo) -> Messageable)
     {
         self.commandID = id
         self.name = name.lowercased()
@@ -106,7 +106,7 @@ extension Command {
         public init(_ type: CommandOptionType,
                     name: String,
                     description: String,
-                    required: Bool = false,
+                    required: Bool = true,
                     choices: [(label: String, value: String)] = []) {
             self.type = type.rawValue
             self.name = name.lowercased()
@@ -167,6 +167,10 @@ public struct CommandInfo: Hashable {
     public var guildID: Snowflake
     public var user: User
     public var options: [(label: String, value: String)]
+    
+    public func getOptionValue(for name: String) -> String? {
+        return options.first { $0.label == name }?.value
+    }
     
     public static func == (lhs: CommandInfo, rhs: CommandInfo) -> Bool {
         lhs.id == rhs.id
