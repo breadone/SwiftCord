@@ -43,7 +43,7 @@ public class SCBot {
 }
 
 
-// MARK: - Helper file operator
+// Helper commandfile methods
 extension SCBot {
     func writeCommandsFile() {
         var cmds = [JSONObject]()
@@ -51,7 +51,8 @@ extension SCBot {
             var tmp = command.arrayRepresentation
             // add the guild id to file so we can handle auto-deleting guild commands
             if let g = command.guildID {
-                tmp["guild_id"] = g.idString
+                tmp["id"] = command.commandID.idString
+                tmp["guild_id"] = g.id
             }
             
             cmds.append(tmp)
@@ -83,13 +84,13 @@ extension SCBot {
                 let name: String = cmd["name"].stringValue
                 let desc: String = cmd["description"].stringValue
                 let id: String = cmd["id"].stringValue
-                let guildID: String = cmd["guild_id"].stringValue
+                let guildID: UInt64 = cmd["guild_id"].uInt64Value
 
                 cmds.append(Command(id: Snowflake(string: id),
                                     name: name,
                                     description: desc,
                                     type: .slashCommand,
-                                    guildID: Snowflake(string: guildID),
+                                    guildID: Snowflake(uint64: guildID),
                                     handler: { _ in "" })) // temporary handler, will get replaced on command re-addition
             }
         }

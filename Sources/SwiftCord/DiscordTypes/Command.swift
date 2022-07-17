@@ -74,7 +74,14 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
 
     // MARK: Methods
     public static func == (lhs: Command, rhs: Command) -> Bool {
-        return (try? lhs.arrayRepresentation.data() == rhs.arrayRepresentation.data()) ?? false
+        var lhsRep = lhs.arrayRepresentation
+        var rhsRep = rhs.arrayRepresentation
+        
+        // add options to the command representations
+        lhsRep["guild_id"] = lhs.guildID?.idString
+        rhsRep["guild_id"] = rhs.guildID?.idString
+        
+        return (try? lhsRep.data() == rhsRep.data()) ?? false
     }
     
     // Hashable conformance

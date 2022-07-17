@@ -104,11 +104,11 @@ extension SCBot {
                     self.commands.removeAll(where: { $0 == command })
                     
                     if let guildID = command.guildID {
-                        botStatus(.command, message: "Deleting unused Guild command: \(command.name)")
                         try await self.request(.deleteGuildCommand(self.appID, Int(guildID.id), command.commandID))
+                        botStatus(.command, message: "Deleting unused Guild command: \(command.name)")
                     } else {
-                        botStatus(.command, message: "Deleting unused command: \(command.name)")
                         try await self.request(.deleteCommand(self.appID, command.commandID))
+                        botStatus(.command, message: "Deleting unused command: \(command.name)")
                     }
                     
                     self.writeCommandsFile()

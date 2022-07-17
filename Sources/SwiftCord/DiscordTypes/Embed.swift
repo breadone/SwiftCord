@@ -25,14 +25,13 @@ public struct Embed: Messageable {
                 text: String? = nil,
                 url: String? = nil,
                 colour: Int? = nil,
-                image: Image? = nil,
-                fields: [[String: String]] = []) {
+                image: Image? = nil) {
         self.title = title
         self.description = text
         self.url = url
         self.color = colour
         self.image = image
-        self.fields = fields
+        self.fields = []
     }
     
     public mutating func addField(title: String, text: String) {

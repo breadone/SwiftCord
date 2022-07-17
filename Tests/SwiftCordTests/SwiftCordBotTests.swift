@@ -62,6 +62,7 @@ final class SCBotTests: XCTestCase {
             return ans
         }
         
+        
         bot.addCommands(to: 715391148096618568, pythag)
         
 //        bot.connect()

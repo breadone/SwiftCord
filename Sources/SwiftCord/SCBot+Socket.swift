@@ -149,7 +149,7 @@ extension SCBot: WebSocketDelegate {
                     }
                     
                     if self.options.displayCommandMessages {
-                        botStatus(.command, message: "Command `\(command.name)` run, with info `\(opts), replied `\(message)`")
+                        botStatus(.command, message: "Command `\(command.name)` run, with info `\(opts)`, replied `\(message)`")
                     }
                     return
                 }
