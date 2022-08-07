@@ -25,7 +25,7 @@ final class SCFoundationTests: XCTestCase {
                                  choices: [(label: "breadone", value: "breadone"), (label: "dfk", value: "dfk")])
 
         let pingThem = Command(name: "hello", description: "Ping the user", options: [opts]) { info in
-            return info.user.atUser
+            return info.sender.atUser
         }
         
         print(pingThem.arrayRepresentation)
@@ -71,8 +71,12 @@ final class SCFileIOTests: XCTestCase {
     func testJsonStuff() {
         let json = JSON(parseJSON: jsonString)
         
-        print("A: ", json["options"][0]["choices"][0]["name"].stringValue, "\n\n\n")
-        print("B: ", json.stringValue)
+//        print("A: ", json["options"][0]["choices"][0]["name"].stringValue, "\n\n\n")
+//        print("B: ", json.stringValue)
+        let a = "asd"
+        var new = JSON(true)
+        
+        print(new.rawString()!)
     }
     
     

@@ -7,6 +7,7 @@
 
 import Foundation
 import Starscream
+import SwiftyJSON
 
 // MARK: - Discord Functions
 extension SCBot {
@@ -15,7 +16,7 @@ extension SCBot {
         Task(priority: .high) {
             do {
                 let data = try await self.request(.gateway)
-                var urlString = data["url"] as! String
+                var urlString = data["url"].stringValue
                 urlString += "/?v=\(options.discordApiVersion)&encoding=json"
                 
                 guard let url = URL(string: urlString) else {
@@ -33,7 +34,7 @@ extension SCBot {
         sema.wait() // waits for WS Connection
 
         // send Identify Payload
-        let data: JSONObject = [
+        let data: JSON = [
             "token": botToken,
             "properties": [
                 "$os": "linux",
@@ -44,7 +45,7 @@ extension SCBot {
             "compress": false,
             "intents": botIntents
         ]
-        let identify = Payload(opcode: .identify, data: data).encode()
+        let identify = Payload(opcode: .identify, data: data.dictionaryObject ?? [:]).encode()
         socket.write(string: identify)
     }
 
@@ -90,10 +91,18 @@ extension SCBot {
     
     public func addCommand(type: Command.CommandType = .slashCommand,
                            _ name: String,
-                           desc: String,
+                           desc: String? = nil,
                            guild: Int? = nil,
                            _ handler: @escaping (CommandInfo) -> Messageable) {
-        let command = Command(name: name, description: desc, options: [], handler: handler)
+        let command = Command(name: name, description: desc, type: type, guildID: Snowflake(int: guild), options: [], handler: handler)
+        
+        if self.commands.contains(where: { $0 == command }) {
+            let index = self.commands.firstIndex(where: { $0 == command })!
+
+            self.commands[index].handler = handler // replaces default command with actual command
+            botStatus(.command, message: "Skipping registering existing command: \(name)")
+            return
+        }
         
         registerCommandToDiscord(guild: guild, command: command)
     }
@@ -103,7 +112,7 @@ extension SCBot {
             let body = try command.arrayRepresentation.data()
             
             // registers command to discord
-            let response: JSONObject
+            let response: JSON
             
             // if its a guild command then use that endpoint instead
             if let guild = guild {
@@ -115,10 +124,10 @@ extension SCBot {
                         headers: ["Content-Type": "application/json"],
                         body: body)
             }
-            
+            print(response.rawString()!)
             botStatus(.command, message: "Registered command: \(command.name)")
             
-            let id = response["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
+            let id = response["id"].stringValue  // this contains the actual snowflake, rather than the randomly generated client one
             let newCommand = Command(id: Snowflake(string: id),
                                      name: command.name,
                                      description: command.description,
@@ -140,20 +149,20 @@ extension SCBot {
     ///   - embeds: Array of embeds to send
     ///   - tts: Whether to enable Text-To-Speech for all supported users on the channel
     public func sendMessage(to channelID: Int, message: String? = nil, embeds: [Embed]? = nil, tts: Bool = false) {
-        var content: JSONObject = ["tts": tts]
+        var content = JSON(["tts": tts])
         
         if let message = message {
-            content["content"] = message
+            content["content"].stringValue = message
         }
         
         if let embeds = embeds {
             var representedArray = [JSONObject]()
             embeds.forEach { representedArray.append($0.arrayRepresentation) }
             
-            content["embeds"] = representedArray
+            content["embeds"] = JSON(representedArray)
         }
         
-        let data = try? content.data() // xc cries when i dont have this i dont know why
+        let data = try? content.rawData() // xc cries when i dont have this i dont know why
         
         Task {
             try await self.request(.createMessage(Snowflake(uint64: UInt64(channelID))),

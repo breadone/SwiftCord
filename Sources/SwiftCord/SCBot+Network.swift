@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftyJSON
 
 extension SCBot {
     /// Makes the network requests to Discord's API
@@ -21,7 +22,7 @@ extension SCBot {
         headers: [String: String]? = nil,
         body: Data? = nil,
         auth: Bool = true
-    ) async throws -> JSONObject {
+    ) async throws -> JSON {
         // Step one: get url string and add all the params
         var urlString = "https://discord.com/api/v\(options.discordApiVersion)\(endpoint.info.url)"
         
@@ -65,7 +66,7 @@ extension SCBot {
                 break
             }
             
-            return try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as? JSONObject ?? [:]
+            return try JSON(data: data)
         } catch {
             throw error
         }

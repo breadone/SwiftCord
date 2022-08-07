@@ -25,7 +25,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
     let options: [CommandOption]
     
     /// 1-100 character description of the command
-    let description: String
+    let description: String?
     
     /// Whether the parameter is required or not (default true)
     let defaultPermission: Bool
@@ -38,7 +38,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
         var cmd: JSONObject =
         ["name": self.name,
          "type": self.type,
-         "description": self.description,
+         "description": self.description as Any,
          "options": []]
         
         if !options.isEmpty {
@@ -55,7 +55,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
     /// Create a command object, that replies with a message immediately
     public init(id: Snowflake = Snowflake(),
                   name: String,
-                  description: String,
+                  description: String?,
                   type: CommandType = .slashCommand,
                   guildID: Snowflake? = nil,
                   enabledByDefault: Bool = true,
@@ -64,12 +64,16 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
     {
         self.commandID = id
         self.name = name.lowercased()
-        self.description = description
         self.type = type.rawValue
         self.options = options
         self.guildID = guildID
         self.defaultPermission = enabledByDefault
         self.handler = handler
+        
+        if type != .user {
+            self.description = description
+        } else { self.description = nil}
+        
     }
 
     // MARK: Methods
@@ -171,11 +175,21 @@ extension Command {
 public struct CommandInfo: Hashable {
     private let id = UUID()
 
+    /// The Channel that the command was used in
     public var channelID: Snowflake
-    public var guildID: Snowflake
-    public var user: User
-    public var options: [(label: String, value: String)]
     
+    /// The Guild that the command was used in
+    public var guildID: Snowflake
+    
+    /// The user that sent/used the command
+    public var sender: User
+    
+    internal var options: [(label: String, value: String)]
+    
+    /// If the command is a User command, this is the target user
+    public var targetUser: User?
+    
+    /// Get the value for the input option value
     public func getOptionValue(for name: String) -> String? {
         return options.first { $0.label == name }?.value
     }

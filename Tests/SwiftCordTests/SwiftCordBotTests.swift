@@ -22,7 +22,7 @@ final class SCBotTests: XCTestCase {
 //        bot.options = SCOptions(displayCommandMessages: false)
         
         
-        bot.addCommand("source", desc: "view swiftcord source code", guild: 715391148096618568) { _ in
+        bot.addCommand("source", desc: "view swiftcord source code") { _ in
             return "https://github.com/breadone/SwiftCord"
         }
         
@@ -30,9 +30,11 @@ final class SCBotTests: XCTestCase {
             return "bot swana"
         }
         
+        bot.addCommand(type: .user, "pingthem", guild: 588992965007900672) { info in
+            return "\(info.targetUser?.atUser ?? "nop") was pinged by \(info.sender.atUser)"
+        }
         
-        
-//        bot.connect()
+        bot.connect()
         
         try? await Task.sleep(nanoseconds: 999 * 1_000_000_000) // 999 sec
     }

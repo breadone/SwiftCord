@@ -47,6 +47,7 @@ public class SCBot {
 extension SCBot {
     func writeCommandsFile() {
         var cmds = [JSONObject]()
+        
         self.commands.forEach { command in
             var tmp = command.arrayRepresentation
             // add the guild id to file so we can handle auto-deleting guild commands
@@ -91,7 +92,7 @@ extension SCBot {
                                     description: desc,
                                     type: .slashCommand,
                                     guildID: Snowflake(uint64: guildID),
-                                    handler: { _ in "TEMP" })) // temporary handler, will get replaced on command re-addition
+                                    handler: { _ in "Uninitialised Command" })) // temporary handler, will get replaced on command re-addition
             }
         }
 
