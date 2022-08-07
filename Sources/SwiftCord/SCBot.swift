@@ -19,6 +19,7 @@ public class SCBot {
     public var options: SCOptions
     public var presence: SCPresence
     public internal(set) var commands: [Command] = []
+    public internal(set) var interactionActions = [Event: [(JSON?) -> Void]]()
 
     public internal(set) var socket: WebSocket! = nil
     public internal(set) var heartbeatInterval: Double = 0
@@ -38,6 +39,27 @@ public class SCBot {
         self.presence = SCPresence(status: .online)
         
         self.commands = readCommandsFile()  // inits saved commands from file
+    }
+    
+    
+    /// Make your bot do something when an event happens.
+    /// Keep in mind, some other things may happen, like when a command event is fired, your bot should respond automatically, regardless of what this function does
+    /// - Parameters:
+    ///   - evt: The event to respond to
+    ///   - action: The action to take, inputs a full JSON object, which will contain all the data you can want.
+    public func onEvent(_ evt: Event, _ action: @escaping (JSON?) -> Void) {
+        if self.interactionActions[evt] != nil {
+            self.interactionActions[evt]!.append(action)
+        } else {
+            self.interactionActions[evt] = [action]
+        }
+    }
+    
+    /// Fires the event handler for the said actions
+    internal func fireEventHandler(for evt: Event, with data: JSON?) {
+        for handler in self.interactionActions[evt] ?? [] {
+            handler(data)
+        }
     }
     
 }

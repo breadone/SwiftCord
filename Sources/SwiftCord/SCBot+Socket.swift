@@ -49,6 +49,7 @@ extension SCBot: WebSocketDelegate {
             socket.write(string: Payload(opcode: .heartbeat).encode())
             
         case 9: // Invalid session
+            fireEventHandler(for: .invalidSession, with: data)
             if (data["d"].boolValue) {
                 botStatus(.genericError, message: "Session invalidated, trying to reconnect...")
                 self.socket = nil
@@ -58,6 +59,7 @@ extension SCBot: WebSocketDelegate {
             }
             
         case 10: // Hello
+            fireEventHandler(for: .hello, with: data)
             heartbeatInterval = data["heartbeat_interval"].doubleValue
             let intervalWithJitter = (heartbeatInterval * Double.random(in: 0...1)) * 1_000_000
             
@@ -69,6 +71,7 @@ extension SCBot: WebSocketDelegate {
             sema.wait()
             
         case 11: // Heartbeat ack
+            fireEventHandler(for: .heartbeatAck, with: data)
             Task(priority: .utility) {
                 await self.heartbeat()
             }
@@ -82,8 +85,8 @@ extension SCBot: WebSocketDelegate {
         var data = JSON()
         
         if payload.d as? NSNull == nil { // checks Payload.d is not null
-            if payload.d as? JSONObject != nil {
-                data = JSON(payload.d as! JSONObject)
+            if payload.d as? [String: Any] != nil {
+                data = JSON(payload.d as! [String: Any])
             } else {
                 data["d"] = JSON(payload.d!)
             }
@@ -93,85 +96,104 @@ extension SCBot: WebSocketDelegate {
         
         switch payload.t {
         case "READY": // Ready, can decode user (among other things but dont caare)
+            fireEventHandler(for: .ready, with: data)
             if let userData = data["user"].dictionaryObject {
                 self.user = User(json: userData)
                 botStatus(.genericStatus, message: "Ready!")
             }
             
         case "INTERACTION_CREATE": // command was used
-            let commandName: String
-            let interactionToken: String, interactionID: Snowflake
-            let channelID: Snowflake, guildID: Snowflake
-
-            // parses the data from the interaction
-            commandName = data["data"]["name"].stringValue
-
-            interactionToken = data["token"].stringValue
-            interactionID = Snowflake(string: data["id"].stringValue)
-
-            channelID = Snowflake(string: data["channel_id"].stringValue)
-            guildID = Snowflake(string: data["guild_id"].stringValue)
-
-            let user = User(json: data["member"]["user"].dictionaryObject ?? [:])
-
-            let optionData = data["data"]["options"].arrayValue
-            
-            var opts = [(String, String)]()
-
-            for opt in optionData {
-                opts.append((opt["name"].stringValue, "\(opt["value"])"))
+            switch data["type"].intValue {
+            case 2: // slash command
+                fireEventHandler(for: .slash_command_recieved, with: data)
+                commandResponse(data, self)
+            case 3: // message component
+                fireEventHandler(for: .message_component, with: data)
+                messageComponentResponse(data, self)
+            default:
+                print("Interaction:", data["type"].intValue)
+                print(data.rawString()!)
             }
-
-            var info = CommandInfo(channelID: channelID, guildID: guildID, sender: user, options: opts)
-            
-            // if the command was a User command, this extracts the target user
-            if data["data"]["resolved"]["users"].dictionary != nil{
-                let userid = data["data"]["target_id"].stringValue
-                
-                info.targetUser = User(json: data["data"]["resolved"]["users"][userid].dictionaryObject!)
-            }
-            
-            // search command array for matching command and execute
-            for command in self.commands {
-                if command.name == commandName {
-                    let message = command.handler(info)  // execute command handler
-
-                    // filter response between embed and string
-                    let response: [String: Any]
-                    if let text = message as? String {
-                        response = ["content": text, "tts": false]
-                    } else {
-                        response = ["embeds": [(message as! Embed).arrayRepresentation], "tts": false]
-                    }
-
-                    let content = JSON(["type": 4, "data": response])
-
-                    Task {
-                        try await self.request(.replyToInteraction(interactionID, interactionToken),
-                                               headers: ["Content-Type": "application/json"],
-                                               body: content.rawData())
-                    }
-
-                    if self.options.displayCommandMessages {
-                        botStatus(.command, message: "Command `\(command.name)` run, with info `\(opts)`, replied `\(message)`")
-                    }
-                    return
-                }
-            }
-
-            botStatus(.warning, message: "Unhandled Command! '\(commandName)'")
-            Task {
-                let content = JSON(["type": 4, "data": ["content": "Command not found", "tts": false]])
-
-                try await self.request(.replyToInteraction(interactionID, interactionToken),
-                                       headers: ["Content-Type": "application/json"],
-                                       body: content.rawData())
-            }
-            
         default:
             if self.options.displayEvents {
                 botStatus(.event, message: "\(payload.t ?? "UNKNOWN_EVENT")")
             }
         }
     }
+}
+
+
+fileprivate func commandResponse(_ data: JSON, _ bot: SCBot) {
+    let commandName: String
+    let interactionToken: String, interactionID: Snowflake
+    let channelID: Snowflake, guildID: Snowflake
+
+    // parses the data from the interaction
+    commandName = data["data"]["name"].stringValue
+
+    interactionToken = data["token"].stringValue
+    interactionID = Snowflake(string: data["id"].stringValue)
+
+    channelID = Snowflake(string: data["channel_id"].stringValue)
+    guildID = Snowflake(string: data["guild_id"].stringValue)
+
+    let user = User(json: data["member"]["user"].dictionaryObject ?? [:])
+
+    let optionData = data["data"]["options"].arrayValue
+    
+    var opts = [(String, String)]()
+
+    for opt in optionData {
+        opts.append((opt["name"].stringValue, "\(opt["value"])"))
+    }
+
+    var info = CommandInfo(channelID: channelID, guildID: guildID, sender: user, options: opts)
+    
+    // if the command was a User command, this extracts the target user
+    if data["data"]["resolved"]["users"].dictionary != nil{
+        let userid = data["data"]["target_id"].stringValue
+        
+        info.targetUser = User(json: data["data"]["resolved"]["users"][userid].dictionaryObject!)
+    }
+    
+    // search command array for matching command and execute
+    for command in bot.commands {
+        if command.name == commandName {
+            let message = command.handler(info)  // execute command handler
+
+            // filter response between embed and string
+            let response: [String: Any]
+            if let text = message as? String {
+                response = ["content": text, "tts": false]
+            } else {
+                response = ["embeds": [(message as! Embed).arrayRepresentation], "tts": false]
+            }
+
+            let content = JSON(["type": 4, "data": response])
+
+            Task {
+                try await bot.request(.replyToInteraction(interactionID, interactionToken),
+                                       headers: ["Content-Type": "application/json"],
+                                       body: content.rawData())
+            }
+
+            if bot.options.displayCommandMessages {
+                bot.botStatus(.command, message: "Command `\(command.name)` run, with info `\(opts)`, replied `\(message)`")
+            }
+            return
+        }
+    }
+
+    bot.botStatus(.warning, message: "Unhandled Command! '\(commandName)'")
+    Task {
+        let content = JSON(["type": 4, "data": ["content": "Command not found", "tts": false]])
+
+        try await bot.request(.replyToInteraction(interactionID, interactionToken),
+                               headers: ["Content-Type": "application/json"],
+                               body: content.rawData())
+    }
+}
+
+fileprivate func messageComponentResponse(_ data: JSON, _ bot: SCBot) {
+    
 }

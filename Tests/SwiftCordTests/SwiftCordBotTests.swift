@@ -38,6 +38,10 @@ final class SCBotTests: XCTestCase {
             return "<@\(info.getOptionValue(for: "userid")!)>"
         }
         
+        bot.onEvent(.ready) { info in
+            print(info?.rawString()! ?? "haha")
+        }
+        
         bot.connect()
         
         try? await Task.sleep(nanoseconds: 999 * 1_000_000_000) // 999 sec
