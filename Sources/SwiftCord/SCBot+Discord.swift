@@ -64,37 +64,7 @@ extension SCBot {
                 continue
             }
             
-            Task {
-                let body = try command.arrayRepresentation.data()
-                
-                // register's command to discord
-                let response: JSONObject
-                
-                // if its a guild command then use that endpoint instead
-                if let guild = guild {
-                    response = try await self.request(.createGuildCommand(self.appID, guild),
-                            headers: ["Content-Type": "application/json"],
-                            body: body)
-                } else {
-                    response = try await self.request(.createCommand(self.appID),
-                            headers: ["Content-Type": "application/json"],
-                            body: body)
-                }
-                
-                botStatus(.command, message: "Registered command: \(command.name)")
-                
-                let id = response["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
-                let newCommand = Command(id: Snowflake(string: id),
-                                         name: command.name,
-                                         description: command.description,
-                                         type: Command.CommandType(rawValue: command.type)!,
-                                         guildID: Snowflake(int: guild),
-                                         handler: command.handler) // replaces the empty handler from file with the actual handler
-
-                self.commands.append(newCommand)
-                
-                self.writeCommandsFile()
-            }
+            registerCommandToDiscord(guild: guild, command: command)
         }
 
 //      delete unused commands by searching thru them and comparing if they exist in the new array
@@ -116,6 +86,50 @@ extension SCBot {
             }
         }
 
+    }
+    
+    public func addCommand(type: Command.CommandType = .slashCommand,
+                           _ name: String,
+                           desc: String,
+                           guild: Int? = nil,
+                           _ handler: @escaping (CommandInfo) -> Messageable) {
+        let command = Command(name: name, description: desc, options: [], handler: handler)
+        
+        registerCommandToDiscord(guild: guild, command: command)
+    }
+    
+    internal func registerCommandToDiscord(guild: Int? = nil, command: Command) {
+        Task {
+            let body = try command.arrayRepresentation.data()
+            
+            // registers command to discord
+            let response: JSONObject
+            
+            // if its a guild command then use that endpoint instead
+            if let guild = guild {
+                response = try await self.request(.createGuildCommand(self.appID, guild),
+                        headers: ["Content-Type": "application/json"],
+                        body: body)
+            } else {
+                response = try await self.request(.createCommand(self.appID),
+                        headers: ["Content-Type": "application/json"],
+                        body: body)
+            }
+            
+            botStatus(.command, message: "Registered command: \(command.name)")
+            
+            let id = response["id"] as? String ?? ""  // this contains the actual snowflake, rather than the randomly generated client one
+            let newCommand = Command(id: Snowflake(string: id),
+                                     name: command.name,
+                                     description: command.description,
+                                     type: Command.CommandType(rawValue: command.type)!,
+                                     guildID: Snowflake(int: guild),
+                                     handler: command.handler) // replaces the empty handler from file with the actual handler
+
+            self.commands.append(newCommand)
+            
+            self.writeCommandsFile()
+        }
     }
     
     /// Sends a message to a Channel, with optional embed support.

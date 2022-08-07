@@ -4,6 +4,7 @@ import SwiftyJSON
 
 
 final class SCFoundationTests: XCTestCase {
+    
     func testPayloadEncoding() {
         let packet = Payload(opcode: .dispatch, data: ["Hello": 4, "hmm": ["test": 5]])
         let data = packet.encode()
@@ -40,6 +41,40 @@ final class SCFoundationTests: XCTestCase {
 }
 
 final class SCFileIOTests: XCTestCase {
+    let jsonString =
+    """
+    {
+      "type": 1,
+      "description": "Ping the user",
+      "name": "hello",
+      "options": [
+        {
+          "description": "idk",
+          "required": true,
+          "choices": [
+            {
+              "value": "breadone",
+              "name": "breadone"
+            },
+            {
+              "value": "dfk",
+              "name": "dfk"
+            }
+          ],
+          "name": "user",
+          "type": 6
+        }
+      ]
+    }
+    """
+    
+    func testJsonStuff() {
+        let json = JSON(parseJSON: jsonString)
+        
+        print("A: ", json["options"][0]["choices"][0]["name"].stringValue, "\n\n\n")
+        print("B: ", json.stringValue)
+    }
+    
     
     func testFileRead() {
         var cmds = [Command]()

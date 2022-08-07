@@ -91,7 +91,7 @@ extension SCBot {
                                     description: desc,
                                     type: .slashCommand,
                                     guildID: Snowflake(uint64: guildID),
-                                    handler: { _ in "" })) // temporary handler, will get replaced on command re-addition
+                                    handler: { _ in "TEMP" })) // temporary handler, will get replaced on command re-addition
             }
         }
 

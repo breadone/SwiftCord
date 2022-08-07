@@ -94,7 +94,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
 public typealias CommandOption = Command.CommandOption
 
 extension Command {
-    public struct CommandOption: Equatable { // TODO: Write custom initialiser and docs for this
+    public struct CommandOption: Equatable, ArrayRepresentable {
         /// The datatype of choices to use
         let type: Int
         
@@ -142,7 +142,8 @@ extension Command {
                 }
             }
             
-            return lhs.name == rhs.name && lhs.description == rhs.description
+//            return lhs.name == rhs.name && lhs.description == rhs.description
+            return ((try? lhs.arrayRepresentation.data() == rhs.arrayRepresentation.data()) != nil) // xcode autocomplete did this,, huh
         }
     }
     
@@ -152,9 +153,9 @@ extension Command {
         case message = 3
     }
     
-    public enum CommandOptionType: Int { // not confusing at all discord
-        case subCommand = 1
-        case subCommandGroup = 2
+    public enum CommandOptionType: Int {
+//        case subCommand = 1
+//        case subCommandGroup = 2
         case string = 3
         case int = 4
         case bool = 5
