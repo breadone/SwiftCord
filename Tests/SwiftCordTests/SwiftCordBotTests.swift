@@ -19,7 +19,7 @@ final class SCBotTests: XCTestCase {
     func testBot() async {
         let bot = SCBot(token: getToken(), appId: 715096508801875990, intents: 1 << 16)
         bot.presence = SCPresence(status: .idle, activity: "And Waiting.", activityType: .watching)
-//        bot.options = SCOptions(displayCommandMessages: false)
+//        bot.options = SCOptions(displayNetworkResponses: true)
         
         
         bot.addCommand("source", desc: "view swiftcord source code") { _ in
@@ -32,6 +32,10 @@ final class SCBotTests: XCTestCase {
         
         bot.addCommand(type: .user, "pingthem", guild: 588992965007900672) { info in
             return "\(info.targetUser?.atUser ?? "nop") was pinged by \(info.sender.atUser)"
+        }
+        
+        bot.addCommand("ping_them", desc: "Ping a user", guild: 588992965007900672, options: CommandOption(.string, name: "userid", description: "the userid to ping")) { info in
+            return "<@\(info.getOptionValue(for: "userid")!)>"
         }
         
         bot.connect()

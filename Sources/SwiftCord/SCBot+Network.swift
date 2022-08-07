@@ -66,6 +66,10 @@ extension SCBot {
                 break
             }
             
+            if self.options.displayNetworkResponses {
+                print(try JSON(data: data).rawString()!)
+            }
+            
             return try JSON(data: data)
         } catch {
             throw error

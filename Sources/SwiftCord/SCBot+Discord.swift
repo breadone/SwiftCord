@@ -93,8 +93,9 @@ extension SCBot {
                            _ name: String,
                            desc: String? = nil,
                            guild: Int? = nil,
-                           _ handler: @escaping (CommandInfo) -> Messageable) {
-        let command = Command(name: name, description: desc, type: type, guildID: Snowflake(int: guild), options: [], handler: handler)
+                           options: CommandOption...,
+                           handler: @escaping (CommandInfo) -> Messageable) {
+        let command = Command(name: name, description: desc, type: type, guildID: Snowflake(int: guild), options: options, handler: handler)
         
         if self.commands.contains(where: { $0 == command }) {
             let index = self.commands.firstIndex(where: { $0 == command })!
@@ -124,7 +125,7 @@ extension SCBot {
                         headers: ["Content-Type": "application/json"],
                         body: body)
             }
-            print(response.rawString()!)
+            
             botStatus(.command, message: "Registered command: \(command.name)")
             
             let id = response["id"].stringValue  // this contains the actual snowflake, rather than the randomly generated client one

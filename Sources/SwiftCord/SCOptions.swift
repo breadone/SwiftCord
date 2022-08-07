@@ -21,4 +21,7 @@ public struct SCOptions {
     
     /// Whether to show currently unsupported events that are recieved through the websocket
     public var displayEvents: Bool = false
+    
+    /// Whether to show responses from network requests, can help debugging SC Source, not very useful otherwise
+    public var displayNetworkResponses: Bool = false
 }
