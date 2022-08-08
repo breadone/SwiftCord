@@ -67,6 +67,7 @@ extension SCBot {
             }
             
             if self.options.displayNetworkResponses {
+                print("[RESPONSE]: from '\(urlString)':")
                 print(try JSON(data: data).rawString()!)
             }
             

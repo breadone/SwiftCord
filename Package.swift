@@ -28,7 +28,6 @@ let package = Package(
             dependencies: ["Starscream", "SwiftyJSON"]),
         .testTarget(
             name: "SwiftCordTests",
-            dependencies: ["SwiftCord"],
-            exclude: ["token.txt"]),
+            dependencies: ["SwiftCord"]),
     ]
 )

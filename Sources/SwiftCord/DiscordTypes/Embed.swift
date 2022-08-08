@@ -3,9 +3,15 @@
 //
 
 import Foundation
+import SwiftyJSON
 
-public protocol Messageable {}
-extension String: Messageable {}
+public protocol Messageable: ArrayRepresentable {}
+
+extension String: Messageable {
+    public var arrayRepresentation: JSON {
+        return JSON(self)
+    }
+}
 
 public struct Embed: Messageable {
     // TODO: make max length of title 256 and desc 4096
@@ -38,8 +44,8 @@ public struct Embed: Messageable {
         self.fields.append(["name": title, "value": text])
     }
     
-    public var arrayRepresentation: JSONObject {
-        var content: JSONObject = ["title": self.title, "fields": self.fields]
+    public var arrayRepresentation: JSON {
+        var content: [String: Any] = ["title": self.title, "fields": self.fields]
         
         if let description = description {
             content["description"] = description
@@ -57,12 +63,12 @@ public struct Embed: Messageable {
             content["image"] = image.arrayRepresentation
         }
         
-        return content
+        return JSON(content)
     }
 }
 
 // Embed substructs
-public struct Image {
+public struct Image: ArrayRepresentable {
     public let url: String
     
     public let proxyURL: String?
@@ -78,7 +84,7 @@ public struct Image {
         self.height = height
     }
     
-    public var arrayRepresentation: JSONObject {
-        ["url": url]
+    public var arrayRepresentation: JSON {
+        JSON(["url": url])
     }
 }

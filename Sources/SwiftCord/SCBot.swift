@@ -74,11 +74,11 @@ extension SCBot {
             var tmp = command.arrayRepresentation
             // add the guild id to file so we can handle auto-deleting guild commands
             if let g = command.guildID {
-                tmp["id"] = command.commandID.idString
-                tmp["guild_id"] = g.id
+                tmp["id"].stringValue = command.commandID.idString
+                tmp["guild_id"].uInt64Value = g.id
             }
             
-            cmds.append(tmp)
+            cmds.append(tmp.dictionaryObject ?? [:])
         }
         
         let content = cmds.encode()

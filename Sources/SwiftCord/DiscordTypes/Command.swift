@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftyJSON
 
 // MARK: - Command
 public struct Command: Equatable, Hashable, ArrayRepresentable {
@@ -34,7 +35,7 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
     /// Return the message the bot should reply with
     var handler: (CommandInfo) -> Messageable
     
-    internal var arrayRepresentation: JSONObject {
+    public var arrayRepresentation: JSON {
         var cmd: JSONObject =
         ["name": self.name,
          "type": self.type,
@@ -44,12 +45,12 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
         if !options.isEmpty {
             var opts = [JSONObject]()
             for option in options {
-                opts.append(option.arrayRepresentation)
+                opts.append(option.arrayRepresentation.dictionaryObject ?? [:])
             }
             cmd["options"] = opts
         }
         
-        return cmd
+        return JSON(cmd)
     }
     
     /// Create a command object, that replies with a message immediately
@@ -82,10 +83,10 @@ public struct Command: Equatable, Hashable, ArrayRepresentable {
         var rhsRep = rhs.arrayRepresentation
         
         // add options to the command representations
-        lhsRep["guild_id"] = lhs.guildID?.idString
-        rhsRep["guild_id"] = rhs.guildID?.idString
+        lhsRep["guild_id"].string = lhs.guildID?.idString
+        rhsRep["guild_id"].string = rhs.guildID?.idString
         
-        return (try? lhsRep.data() == rhsRep.data()) ?? false
+        return (try? lhsRep.rawData() == rhsRep.rawData()) ?? false
     }
     
     // Hashable conformance
@@ -126,14 +127,15 @@ extension Command {
             self.choices = choices    
         }
         
-        internal var arrayRepresentation: JSONObject {
+        public var arrayRepresentation: JSON {
             var data: JSONObject = ["name": name, "description": description, "type": type, "required": req, "choices": ""]
             var choice = [JSONObject]()
             for c in choices {
                 choice.append(["name": c.label, "value": c.value])
             }
             data["choices"] = choice
-            return data
+            
+            return JSON(data)
         }
         
         public static func == (lhs: CommandOption, rhs: CommandOption) -> Bool {
@@ -147,7 +149,7 @@ extension Command {
             }
             
 //            return lhs.name == rhs.name && lhs.description == rhs.description
-            return ((try? lhs.arrayRepresentation.data() == rhs.arrayRepresentation.data()) != nil) // xcode autocomplete did this,, huh
+            return ((try? lhs.arrayRepresentation.rawData() == rhs.arrayRepresentation.rawData()) != nil) // xcode autocomplete did this,, huh
         }
     }
     

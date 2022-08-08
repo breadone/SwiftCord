@@ -3,7 +3,8 @@
 //
 
 import Foundation
+import SwiftyJSON
 
-protocol ArrayRepresentable: JSONEncodable {
-    var arrayRepresentation: JSONObject { get }
+public protocol ArrayRepresentable: JSONEncodable {
+    var arrayRepresentation: JSON { get }
 }

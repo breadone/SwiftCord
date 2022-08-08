@@ -110,7 +110,7 @@ extension SCBot {
     
     internal func registerCommandToDiscord(guild: Int? = nil, command: Command) {
         Task {
-            let body = try command.arrayRepresentation.data()
+            let body = try command.arrayRepresentation.rawData()
             
             // registers command to discord
             let response: JSON
@@ -158,11 +158,10 @@ extension SCBot {
         
         if let embeds = embeds {
             var representedArray = [JSONObject]()
-            embeds.forEach { representedArray.append($0.arrayRepresentation) }
+            embeds.forEach { representedArray.append($0.arrayRepresentation.dictionaryObject ?? [:]) }
             
             content["embeds"] = JSON(representedArray)
         }
-        
         let data = try? content.rawData() // xc cries when i dont have this i dont know why
         
         Task {

@@ -8,7 +8,7 @@ import SwiftyJSON
 
 fileprivate func getToken() -> String {
     do {
-        return try String(contentsOfFile: "\(NSHomeDirectory())/Code/Swift/SwiftCord/Tests/SwiftCordTests/token.txt")
+        return try String(contentsOfFile: "\(NSHomeDirectory())/Documents/token.txt")
     } catch {
         fatalError(error.localizedDescription)
     }
@@ -27,19 +27,15 @@ final class SCBotTests: XCTestCase {
         }
         
         bot.addCommand("bot", desc: "swana", guild: 715391148096618568) { info in
-            return "bot swana"
+            return "swana"
         }
         
         bot.addCommand(type: .user, "pingthem", guild: 588992965007900672) { info in
             return "\(info.targetUser?.atUser ?? "nop") was pinged by \(info.sender.atUser)"
         }
         
-        bot.addCommand("ping_them", desc: "Ping a user", guild: 588992965007900672, options: CommandOption(.string, name: "userid", description: "the userid to ping")) { info in
-            return "<@\(info.getOptionValue(for: "userid")!)>"
-        }
-        
-        bot.onEvent(.ready) { info in
-            print(info?.rawString()! ?? "haha")
+        bot.onEvent(.message_component) { info in
+            bot.sendMessage(to: 715391148096618571, message: "please i am suffering")
         }
         
         bot.connect()

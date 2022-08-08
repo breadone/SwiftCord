@@ -112,7 +112,6 @@ extension SCBot: WebSocketDelegate {
                 messageComponentResponse(data, self)
             default:
                 print("Interaction:", data["type"].intValue)
-                print(data.rawString()!)
             }
         default:
             if self.options.displayEvents {
@@ -195,5 +194,13 @@ fileprivate func commandResponse(_ data: JSON, _ bot: SCBot) {
 }
 
 fileprivate func messageComponentResponse(_ data: JSON, _ bot: SCBot) {
+    let interactionID = data["id"].stringValue
+    let interactionToken = data["token"].stringValue
     
+    // just pong for now, more to come later probably
+    Task {
+        try? await bot.request(.replyToInteraction(Snowflake(string: interactionID), interactionToken),
+                               headers: ["Content-Type": "application/json"],
+                               body: JSON(["type": 6]).rawData())
+    }
 }
