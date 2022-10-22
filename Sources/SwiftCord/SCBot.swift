@@ -10,6 +10,8 @@ import Starscream
 import SwiftyJSON
 
 /// The main SwiftCord Bot class
+///
+/// An instance of a Discord Bot User
 public class SCBot {
     public let botToken: String
     public var botIntents: Int
@@ -29,12 +31,12 @@ public class SCBot {
     /// - Parameters:
     ///   - token: Your bot token
     ///   - id: Your application ID, gotten from bot dashboard
-    ///   - intents: The bot's intent integer, gotten from the bot dashboard
+    ///   - intents: An array of intents your bot has access to
     ///   - options: An optional SwiftCord options object
-    public init(token: String, appId id: Int, intents: Int, options: SCOptions = .default) {
+    public init(token: String, appId id: Int, intents: [DiscordIntents], options: SCOptions = .default) {
         self.botToken = token
         self.appID = id
-        self.botIntents = intents
+        self.botIntents = intents.sum()
         self.options = options
         self.presence = SCPresence(status: .online)
         

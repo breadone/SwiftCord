@@ -17,7 +17,7 @@ fileprivate func getToken() -> String {
 
 final class SCBotTests: XCTestCase {
     func testBot() async {
-        let bot = SCBot(token: getToken(), appId: 715096508801875990, intents: 1 << 16)
+        let bot = SCBot(token: getToken(), appId: 715096508801875990, intents: [.all])
         bot.presence = SCPresence(status: .idle, activity: "And Waiting.", activityType: .watching)
 //        bot.options = SCOptions(displayNetworkResponses: true)
         

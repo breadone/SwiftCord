@@ -165,9 +165,13 @@ extension SCBot {
         let data = try? content.rawData() // xc cries when i dont have this i dont know why
         
         Task {
-            try await self.request(.createMessage(Snowflake(uint64: UInt64(channelID))),
-                                   headers: ["Content-Type": "application/json"],
-                                   body: data)
+            do {
+                try await self.request(.createMessage(Snowflake(uint64: UInt64(channelID))),
+                                       headers: ["Content-Type": "application/json"],
+                                       body: data)
+            } catch {
+                botStatus(.genericError, message: "Could not send message: \(error.localizedDescription)")
+            }
         }
     }
 

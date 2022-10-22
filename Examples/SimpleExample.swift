@@ -17,7 +17,7 @@ let intents: Int = 1 << 16
 // initialise the bot
 let bot = SCBot(token: botToken,
                 appId: appID,
-                intents: intents,
+                intents: [.guildMembers, .guildMessages],
                 options: SCOptions(displayCommandMessages: false))
 
 
